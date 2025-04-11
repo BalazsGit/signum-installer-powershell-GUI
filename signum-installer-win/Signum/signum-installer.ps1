@@ -2,6 +2,9 @@
 Set-Location $PSScriptRoot
 $host.UI.RawUI.WindowTitle = "Signum Installer"
 
+$WEB_GUI_PORT = 8089  # Web UI port
+$CONFIG_FILE_NAME = "config.json"
+
 ### Global variables ###
 $global:UserResponse = $null
 
@@ -650,14 +653,15 @@ $BROWSER_CHROMIUM_URL = "https://download-chromium.appspot.com/dl/Win_x64?type=s
 $BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME = "Extensions"
 $BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH = "$BROWSER_CHROMIUM_UNZIP_PATH\$BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME"
 
+# TODO Extention SignumXT should be installed manually by developer mode and add extention from Extentions folder path $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH to be added permanently
 ### Chromium Signum XT Wallet Extension variables ###
 $BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME = "SignumXT"
 $BROWSER_CHROMIUM_SIGNUM_XT_VERSION = "1.5.2"
 $BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME = "chrome.zip"
 $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_INSTALL = $true
 $BROWSER_CHROMIUM_SIGNUM_XT_DIR_PATH = "$BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH\$BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME"
-$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH = "$BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH\$BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME"
 $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH = "$BROWSER_CHROMIUM_SIGNUM_XT_DIR_PATH\$BROWSER_CHROMIUM_SIGNUM_XT_VERSION"
+$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH = "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH\$BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME"
 $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_URL = "https://github.com/signum-network/signum-xt-wallet/releases/download/${BROWSER_CHROMIUM_SIGNUM_XT_VERSION}/${BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME}"
 
 # TODO temporary solution untill /refs/heads/main has issues with build
@@ -5043,36 +5047,36 @@ exit
 		Write-Host "Directory already exists: ${BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH}"
 	}
 
+	# In case true installation of released version
 	if ($BROWSER_CHROMIUM_SIGNUM_XT_VERSION_INSTALL) {
-
-		# Create SignumXT directory from github release version
-		if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH")) {
-			New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH" | Out-Null
-			Write-Host "Created directory: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
-		} else {
-			Write-Host "Directory already exists: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
-		}
-
-		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH") {
-			Write-Host "${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH} already downloaded."
-		} else {
-			# Download SignumXT Extension
-			Write-Host "Downloading SignumXT Extension ..."
-			# Start-BitsTransfer -Source "${BROWSER_CHROMIUM_URL}" -Destination "${BROWSER_CHROMIUM_ZIP_PATH}"
-			Invoke-WebRequest -Uri $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_URL -OutFile $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH
-
-			# Check if download was successful
-			if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH")) {
-				Write-Host "Error: Failed to download Notepad."
-				Pause
-				return
-			}
-		}
 		# Install SignumXT Extension from github release
-		# Unzip files
-		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH\misc") {
+		# Check if given SignumXT Extention is installed
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH\fullpage.html") {
 			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH already installed."
 		} else {
+			# Create SignumXT directory from github release version
+			if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH")) {
+				New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH" | Out-Null
+				Write-Host "Created directory: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
+			} else {
+				Write-Host "Directory already exists: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
+			}
+
+			if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH") {
+				Write-Host "${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH} already downloaded."
+			} else {
+				# Download SignumXT Extension
+				Write-Host "Downloading SignumXT Extension ..."
+				# Start-BitsTransfer -Source "${BROWSER_CHROMIUM_URL}" -Destination "${BROWSER_CHROMIUM_ZIP_PATH}"
+				Invoke-WebRequest -Uri $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_URL -OutFile $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH
+
+				# Check if download was successful
+				if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH")) {
+					Write-Host "Error: Failed to download Notepad."
+					Pause
+					return
+				}
+			}
 			# Unzip the downloaded file to the installation directory
 			Write-Host "Unzipping SignumXT to $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH ..."
 			Expand-Archive -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH" -DestinationPath "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH" -Force
@@ -5081,14 +5085,6 @@ exit
 		Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}",`
 			"--load-extension=.\$BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_VERSION"
 
-		# Delete files
-		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH") {
-			Write-Host "Delete $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH file."
-			Remove-Item -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH" -Force
-		} else {
-			# Delete the downloaded file
-			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH already deleted"
-		}
 	} else {
 
 		# TODO BUG Extension is not loading
@@ -5141,7 +5137,7 @@ exit
 		# Install SignumXT Extension from github main branch
 		# Unzip files
 		# TODO Questionprompt for reinstall
-		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH\misc") {
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH\fullpage.html") {
 			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH already installed."
 		} else {
 			# Unzip the SignumXT to the installation directory
@@ -7068,7 +7064,6 @@ CREATE INDEX account_latest ON account(latest);
     Write-Host "MariaDB setup complete."
 }
 
-
 function setup_mariadb_explorer ($name, $database, $user, $password) {
 	
 	$DATABASE_NAME = ""
@@ -7250,5 +7245,1520 @@ function download-prompt($name, $url, $target_path, $file) {
 
 # Initialize the script by showing the install menu
 # Pause
-install-doc-init
-Show-InstallMenu
+
+# Show-InstallMenu
+
+#===================================================================#
+
+#================#
+# Start GUI Code #
+#================#
+
+#=======================#
+# Functions definitions #
+#=======================#
+
+#================#
+# Util functions #
+#================#
+
+# TODO modify parameter call 
+# Function to select YES/NO answer
+function question-prompt-backend ($process, $name, $installFunction) {
+	# Initialize the global variable
+	$global:UserResponse = $null
+    $userChoice = Read-Host "Do you want to ${process} ${name} (yes/no)"
+    if ($userChoice -match '^(yes|YES|Yes|y|Y)$') {
+		$global:UserResponse = "yes"
+        &$installFunction
+	} elseif ($userChoice -match '^(no|NO|No|n|N)$') {
+		$global:UserResponse = "no"
+		Write-Host "${name} ${process} canceled."
+	} else {
+		$global:UserResponse = $null
+		Write-Host "Wrong choice, please try again"
+		Pause
+		question-prompt-backend $process $name $installFunction
+	}
+}
+
+# Function to start a process
+function start-process-menu-backend($file, $name, $installFunction) {
+	if (Test-Path $file) {
+		Write-Host "Starting ${name} ..."
+		# Start-Process -FilePath $file $command
+		& $POWERSHELL_EXEC_PATH -ExecutionPolicy Bypass -File "$file"
+		# Start-Process -FilePath $POWERSHELL_EXEC_PATH -ArgumentList "-ExecutionPolicy Bypass", "-File", $file
+		Pause
+		Show-StartMenu
+	} else {
+		Write-Host "${name} is not installed, please install first!"
+		question-prompt-backend "Install" $name $installFunction
+		Pause
+		Show-StartMenu
+	}
+}
+
+# Function to create executable to starter PS1 files
+function create-starter-ps1-exec-backend {
+	param (
+        [string]$PSFileName,
+		[string]$PSExecRelPath,
+		[string]$StarterExecName,
+		[string]$StarterExecRelPath
+    )
+	try {
+		if (-not (Test-Path $StarterExecRelPath)) {
+			# Create start-node batch file with the desired content
+			$content = 
+@"
+cd %~dp0
+$PSExecRelPath -ExecutionPolicy Bypass -File ".\$PSFileName"
+"@
+			$content | Out-File -FilePath $StarterExecRelPath -Force
+			Write-Host "$StarterExecName successfully created."  -ForegroundColor Green
+		} else {
+			Write-Host "File already exists: $StarterExecName"  -ForegroundColor Yellow
+		}
+	} catch {
+		Write-Host "Error during creation $StarterExecName file."  -ForegroundColor Red
+		Write-Host $_.Exception.Message -ForegroundColor DarkRed
+	}
+}
+
+# Function to check port availability
+function Test-PortAvailability {
+    param (
+        [int]$Port
+    )
+    $tcpListener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Any, $Port)
+    try {
+        $tcpListener.Start()
+        $tcpListener.Stop()
+        return $true  # Port is available
+    } catch {
+        return $false # Port is already in use
+    }
+}
+
+# Function to check if running as Administrator
+function Test-IsAdmin {
+    if ($IsWindows) {
+        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = New-Object System.Security.Principal.WindowsPrincipal($currentUser)
+        return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+    }
+    elseif ($IsLinux -or $IsMacOS) {
+        return $(whoami) -eq "root"
+    }
+    return $false
+}
+
+# Function to restart PowerShell as Administrator
+function Restart-AsAdmin {
+    if ($IsWindows) {
+		try {
+			Start-Process -FilePath $POWERSHELL_EXEC_PATH -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+			Write-Host "Restarting PowerShell as Administrator..." -ForegroundColor Yellow
+		}
+		catch {
+			Write-Host "Error ocurred while Restarting PowerShell as Administrator." -ForegroundColor Red
+			Write-Host $_.Exception.Message -ForegroundColor DarkRed
+		}
+        exit
+    }
+    elseif ($IsLinux -or $IsMacOS) {
+		try {
+			sudo pwsh "$PSCommandPath"
+			Write-Host "Restarting PowerShell as root..." -ForegroundColor Yellow
+		}
+		catch {
+			Write-Host "Error ocurred while Restarting PowerShell as root." -ForegroundColor Red
+			Write-Host $_.Exception.Message -ForegroundColor DarkRed
+		}
+        exit
+    }
+    else {
+        Write-Host "Unknown OS. Cannot restart with elevated privileges." -ForegroundColor Red
+        exit 1
+    }
+}
+
+#=====================#
+# Installer functions #
+#=====================#
+
+# Function to download documentations
+function install-doc-init-backend {
+	
+	# Create directory
+    if (-not (Test-Path -Path $DOCUMENTS_DIR)) {
+		New-Item -Path "$DOCUMENTS_DIR" -ItemType Directory | Out-Null
+	} else {
+		Write-Host "$DOCUMENTS_DIR already exists."
+	}
+	
+	$content = 
+@"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signum Cryptocurrency Resources</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            margin: 5px 0;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Signum Cryptocurrency Resources</h1>
+    
+    <div class="section">
+        <h2>Documentation & Development</h2>
+        <ul>
+            <li><a href="https://github.com/deleterium/SmartC/blob/v2.1/docs%2FREADME.md">SmartC README</a></li>
+            <li><a href="https://docs.signum.network/ecosystem/resources-for-developers">Developer Resources</a></li>
+            <li><a href="https://wiki.signum.network/signum-software/index.htm">Signum Software Wiki</a></li>
+            <li><a href="https://github.com/signum-network/signumj">SignumJ GitHub</a></li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Research & Papers</h2>
+        <ul>
+            <li><a href="https://www.signum.network/wp/Signum_Business_Whitepaper.pdf">Signum Business Whitepaper</a></li>
+            <li><a href="https://indecs.eu/2024/indecs2024-pp738-762.pdf">Blockchain for IoT Devices</a></li>
+            <li><a href="https://www.whitehouse.gov/wp-content/uploads/2022/09/09-2022-Crypto-Assets-and-Climate-Report.pdf">Crypto-Assets and Climate Report</a></li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Community & Social Media</h2>
+        <ul>
+            <li><a href="https://discord.com/invite/QHZkF4KHDS">Signum Discord</a></li>
+            <li><a href="https://x.com/signum_official">Signum X</a></li>
+            <li><a href="https://t.me/signumnetwork">Signum Network Telegram</a></li>
+            <li><a href="https://t.me/Signum_Russia">Signum Russia Telegram</a></li>
+            <li><a href="https://t.me/signumchain">Signum Chain Telegram</a></li>
+            <li><a href="https://t.me/Signum_HK">Signum HK Telegram</a></li>
+            <li><a href="https://t.me/signa_holders">Signa Holders Telegram</a></li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Tools & Services</h2>
+        <ul>
+            <li><a href="https://miningpoolstats.stream/signa">Mining Pool Stats</a></li>
+            <li><a href="http://ciyam.org/at/">CIYAM AT</a></li>
+            <li><a href="https://signum.dappository.world/">Signum Dappository</a></li>
+            <li><a href="https://signum-neo-node.pages.dev/">Signum Neo Node</a></li>
+            <li><a href="https://docs.signum.network/signumswap/add-a-customised-icon">SignumSwap Custom Icon</a></li>
+            <li><a href="https://explorer.signum.network/">Signum Explorer</a></li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>External Resources</h2>
+        <ul>
+            <li><a href="https://coindar.org/en/coin/signum">Coindar Signum</a></li>
+            <li><a href="https://bitcointalk.org/index.php?action=profile;u=364787">BitcoinTalk Profile</a></li>
+            <li><a href="https://xeggex.com/market/SIGNA_BTC">Xeggex Market SIGNA/BTC</a></li>
+            <li><a href="https://fomplo.com/signum-subscriptions">Signum Subscriptions</a></li>
+            <li><a href="https://signum.network/">Signum Network</a></li>
+            <li><a href="https://www.signumart.io/">NFT Portal</a></li>
+        </ul>
+    </div>
+</body>
+</html>
+"@
+	
+	# Create Signum link collection page
+	if (-not (Test-Path $SIGNUM_LINK_COLLECTION_PATH)) {
+		
+		# Create Signum-Link-Collection.html file with the desired content
+		$content | Out-File -FilePath $SIGNUM_LINK_COLLECTION_PATH -Force
+		Write-Host "${SIGNUM_LINK_COLLECTION_PATH} successfully created."
+		
+	} else {
+		
+		Write-Host "File already exists: ${SIGNUM_LINK_COLLECTION_PATH}"
+		$fileContent = Get-Content -Path $SIGNUM_LINK_COLLECTION_PATH -Raw
+		# Compare the content
+		
+		if ($fileContent.TrimEnd() -eq $content.TrimEnd()) {
+			
+			Write-Output "The contents are the same."
+			
+		} else {
+			
+			Write-Output "The contents are different."
+			Write-Output "Update $SIGNUM_LINK_COLLECTION."
+			$content | Out-File -FilePath $SIGNUM_LINK_COLLECTION_PATH -Force
+			
+		}
+	}
+	
+	if (-not (Test-Path -Path $WHITEPAPER_DOC_PATH)) {
+		Write-Host "Downloading $WHITEPAPER_DOC_NAME"
+		Invoke-WebRequest -Uri $WHITEPAPER_URL -OutFile $WHITEPAPER_DOC_PATH
+	} else {
+		Write-Host "$WHITEPAPER_DOC_PATH already exists."
+	}
+	
+	if (-not (Test-Path -Path $WHITEHOUSE_DOC_PATH)) {
+		Write-Host "Downloading $WHITEHOUSE_DOC_NAME"
+		Invoke-WebRequest -Uri $WHITEHOUSE_URL -OutFile $WHITEHOUSE_DOC_PATH
+	} else {
+		Write-Host "$WHITEHOUSE_DOC_PATH already exists."
+	}
+	
+	if (-not (Test-Path -Path $INDECS_DOC_PATH)) {
+		Write-Host "Downloading $INDECS_DOC_NAME"
+		Invoke-WebRequest -Uri $INDECS_URL -OutFile $INDECS_DOC_PATH
+	} else {
+		Write-Host "$INDECS_DOC_PATH already exists."
+	}
+
+	Write-Host "Documents downloaded successfully"
+	
+}
+
+# Function to install nodejs
+function install_nodejs-backend {
+    # Create NodeJS directory
+    if (-not (Test-Path "${NODEJS_DIR_PATH}")) {
+        New-Item -ItemType Directory -Path "${NODEJS_DIR_PATH}" | Out-Null
+        Write-Host "Created directory: ${NODEJS_DIR_NAME}"
+    } else {
+        Write-Host "Directory already exists: ${NODEJS_DIR_NAME}"
+    }
+
+    if (Test-Path "${NODEJS_ZIP_PATH}") {
+        Write-Host "${NODEJS_ZIP_PATH} already downloaded."
+    } else {
+        # Download NodeJs
+        Write-Host "Downloading NodeJS ..."
+        # Start-BitsTransfer -Source "${NODEJS_URL}" -Destination "${NODEJS_ZIP_PATH}"
+		Invoke-WebRequest -Uri ${NODEJS_URL} -OutFile ${NODEJS_ZIP_PATH}
+
+        # Check if download was successful
+        if (-not (Test-Path "${NODEJS_ZIP_PATH}")) {
+            Write-Host "Error: Failed to download Notepad."
+            Pause
+            return
+        }
+    }
+
+    if (Test-Path "${NODEJS_UNZIP_PATH}") {
+        Write-Host "${NODEJS_UNZIP_NAME} already installed."
+    } else {
+        # Unzip the downloaded file to the installation directory
+        Write-Host "Unzipping Notepad to $NODEJS_UNZIP_PATH ..."
+        Expand-Archive -Path "$NODEJS_ZIP_PATH" -DestinationPath "$NODEJS_DIR_PATH" -Force
+    }
+
+	# Create starter ps1
+	if (-not (Test-Path $NODEJS_STARTER_PS1_PATH)) {
+		# Create start-nodejs.ps1 file with the desired content
+		$content = 
+@"
+# PowerShell script to start NodeJS
+Set-Location -Path `$PSScriptRoot
+
+# Start NodeJS
+Start-Process -FilePath ".\$NODEJS_EXEC_NAME"
+
+exit
+"@
+
+		$content | Out-File -FilePath $NODEJS_STARTER_PS1_PATH -Force
+
+		Write-Host "${NODEJS_STARTER_PS1_PATH} successfully created."
+	} else {
+			Write-Host "File already exists: ${NODEJS_STARTER_PS1_PATH}"
+	}
+
+	# Create starter batch
+	create-starter-ps1-exec-backend -PSFileName $NODEJS_STARTER_PS1_NAME `
+								-PSExecRelPath "..\..\..\$POWERSHELL_EXEC_PATH" `
+								-StarterExecName $NODEJS_STARTER_EXEC_NAME `
+								-StarterExecRelPath $NODEJS_STARTER_EXEC_PATH
+
+	Write-Host "NodeJS installed successfully."
+	
+}
+
+# Function to install portable browser
+function install_chromium_browser_backend {
+	Write-Host "Installing Chromium Browser ..."
+
+    # Create Browser directory
+    if (-not (Test-Path "$BROWSER_CHROMIUM_DIR_PATH")) {
+        New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_DIR_PATH" | Out-Null
+        Write-Host "Created directory: ${BROWSER_CHROMIUM_DIR_PATH}"
+    } else {
+        Write-Host "Directory already exists: ${BROWSER_CHROMIUM_DIR_PATH}"
+    }
+
+    if (Test-Path "$BROWSER_CHROMIUM_ZIP_PATH") {
+        Write-Host "${BROWSER_CHROMIUM_ZIP_PATH} already downloaded."
+    } else {
+        # Download Chromium Browser
+        Write-Host "Downloading Chromium Browser ..."
+        # Start-BitsTransfer -Source "${BROWSER_CHROMIUM_URL}" -Destination "${BROWSER_CHROMIUM_ZIP_PATH}"
+		Invoke-WebRequest -Uri $BROWSER_CHROMIUM_URL -OutFile $BROWSER_CHROMIUM_ZIP_PATH
+
+        # Check if download was successful
+        if (-not (Test-Path "$BROWSER_CHROMIUM_ZIP_PATH")) {
+            Write-Host "Error: Failed to download Notepad."
+            Pause
+            return
+        }
+    }
+
+	# Unzip files
+    if (Test-Path "$BROWSER_CHROMIUM_UNZIP_PATH") {
+        Write-Host "$BROWSER_CHROMIUM_UNZIP_PATH already installed."
+    } else {
+        # Unzip the downloaded file to the installation directory
+        Write-Host "Unzipping Chromium Browser to $BROWSER_CHROMIUM_UNZIP_PATH ..."
+        Expand-Archive -Path "$BROWSER_CHROMIUM_ZIP_PATH" -DestinationPath "$BROWSER_CHROMIUM_DIR_PATH" -Force
+    }
+
+	# Create starter ps1
+	if (-not (Test-Path $BROWSER_CHROMIUM_STARTER_PS1_PATH)) {
+		# Create start-notepad.ps1 file with the desired content
+		$content = 
+@"
+# PowerShell script to start Chromium Browser
+Set-Location -Path `$PSScriptRoot
+
+# Start Chromium Browser
+Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_NAME" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}"
+
+exit
+"@
+
+		$content | Out-File -FilePath $BROWSER_CHROMIUM_STARTER_PS1_PATH -Force
+
+		Write-Host "${BROWSER_CHROMIUM_STARTER_PS1_PATH} successfully created."
+	} else {
+			Write-Host "File already exists: ${BROWSER_CHROMIUM_STARTER_PS1_PATH}"
+	}
+
+	# Create starter batch
+	create-starter-ps1-exec-backend -PSFileName $BROWSER_CHROMIUM_STARTER_PS1_NAME `
+								-PSExecRelPath "..\..\..\$POWERSHELL_EXEC_PATH" `
+								-StarterExecName $BROWSER_CHROMIUM_STARTER_EXEC_NAME `
+								-StarterExecRelPath $BROWSER_CHROMIUM_STARTER_EXEC_PATH
+
+	# Create Extensins directory
+	if (-not (Test-Path "$BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH")) {
+		New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH" | Out-Null
+		Write-Host "Created directory: ${BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH}"
+	} else {
+		Write-Host "Directory already exists: ${BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH}"
+	}
+
+	# In case true installation of released version
+	if ($BROWSER_CHROMIUM_SIGNUM_XT_VERSION_INSTALL) {
+		# Install SignumXT Extension from github release
+		# Check if given SignumXT Extention is installed
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH\fullpage.html") {
+			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH already installed."
+		} else {
+			# Create SignumXT directory from github release version
+			if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH")) {
+				New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH" | Out-Null
+				Write-Host "Created directory: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
+			} else {
+				Write-Host "Directory already exists: ${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH}"
+			}
+
+			if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH") {
+				Write-Host "${BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH} already downloaded."
+			} else {
+				# Download SignumXT Extension
+				Write-Host "Downloading SignumXT Extension ..."
+				# Start-BitsTransfer -Source "${BROWSER_CHROMIUM_URL}" -Destination "${BROWSER_CHROMIUM_ZIP_PATH}"
+				Invoke-WebRequest -Uri $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_URL -OutFile $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH
+
+				# Check if download was successful
+				if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH")) {
+					Write-Host "Error: Failed to download Notepad."
+					Pause
+					return
+				}
+			}
+			# Unzip the downloaded file to the installation directory
+			Write-Host "Unzipping SignumXT to $BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH ..."
+			Expand-Archive -Path "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_ZIP_PATH" -DestinationPath "$BROWSER_CHROMIUM_SIGNUM_XT_VERSION_DIR_PATH" -Force
+		}
+
+		Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}",`
+			"--load-extension=.\$BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_VERSION"
+
+	} else {
+
+		# TODO BUG Extension is not loading
+		# Create SignumXT directory from github main branch
+		if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH")) {
+			New-Item -ItemType Directory -Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH" | Out-Null
+			Write-Host "Created directory: ${BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH}"
+		} else {
+			Write-Host "Directory already exists: ${BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH}"
+		}
+
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH") {
+			Write-Host "${BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH} already downloaded."
+		} else {
+			# Download SignumXT Extension
+			Write-Host "Downloading SignumXT Extension ..."
+			Write-Host "From URL: $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_URL"
+			Write-Host "To: $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH"
+			# Start-BitsTransfer -Source "${BROWSER_CHROMIUM_URL}" -Destination "${BROWSER_CHROMIUM_ZIP_PATH}"
+			Invoke-WebRequest -Uri $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_URL -OutFile $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH
+
+			# Check if download was successful
+			if (-not (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH")) {
+				Write-Host "Error: Failed to download Notepad."
+				Pause
+				return
+			}
+		}
+
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH") {
+			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH already unzipped."
+		} else {
+			# Unzip the downloaded file to the installation directory
+			Write-Host "Unzipping original main to $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH ..."
+			Expand-Archive -Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH" -DestinationPath "$BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH" -Force
+		}
+
+		# Install nodejs
+		install_nodejs-backend
+
+		Set-Location ".\$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH"
+
+		# Build SignumXT from github main branch
+		Write-Host "Build SignumXT from github main branch"
+		& "..\..\..\..\..\${NODEJS_UNZIP_PATH}\node_modules\corepack\shims\yarn.cmd" install
+		& "..\..\..\..\..\${NODEJS_UNZIP_PATH}\node_modules\corepack\shims\yarn.cmd" build:chrome
+		
+		Set-Location -Path $PSScriptRoot
+
+		# Install SignumXT Extension from github main branch
+		# Unzip files
+		# TODO Questionprompt for reinstall
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH\fullpage.html") {
+			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH already installed."
+		} else {
+			# Unzip the SignumXT to the installation directory
+			Write-Host "Unzipping SignumXT original main to $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH ..."
+			Expand-Archive -Path "${BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH}\dist\${BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME}" -DestinationPath "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH" -Force
+	
+		}
+
+		Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}",`
+			"--load-extension=.\$BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_NAME"
+
+		# Delete files
+		Write-Host "Cleaning $BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH directory."
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH") {
+			Write-Host "Delete $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH file."
+			Remove-Item -Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH" -Force
+		} else {
+			# Delete the downloaded file
+			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_ZIP_ORIGINAL_PATH already deleted"
+		}
+
+		if (Test-Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH") {
+			Write-Host "Delete $BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH file."
+			Remove-Item -Path "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH" -Recurse -Force
+		} else {
+			# Delete the downloaded file
+			Write-Host "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH already deleted"
+		}
+
+	}
+
+	Write-Host "Chromium Browser installed successfully."
+	
+}
+
+# Function to install neccessary modules
+function Ensure-PortableModule {
+    param (
+        [string]$ModuleName,
+        [string]$ModulePath = ".\PowerShellModules"
+    )
+
+    # Ensure the module directory exists
+    if (!(Test-Path $ModulePath)) {
+        New-Item -ItemType Directory -Path $ModulePath -Force | Out-Null
+    }
+
+    # Add module path to PSModulePath
+    $env:PSModulePath = "$ModulePath;$env:PSModulePath"
+
+    # Check if the module is already installed
+    $installedModule = Get-Module -ListAvailable -Name $ModuleName | Sort-Object Version -Descending | Select-Object -First 1
+    $latestModule = Find-Module -Name $ModuleName | Select-Object -First 1
+
+    if (!$installedModule) {
+        Write-Host "$ModuleName is not installed. Installing it to $ModulePath..." -ForegroundColor Yellow
+        try {
+            Save-Module -Name $ModuleName -Path $ModulePath -Force
+            Write-Host "$ModuleName installed successfully!" -ForegroundColor Green
+        } catch {
+            Write-Host "❌ Failed to install ${ModuleName}: $_" -ForegroundColor Red
+            exit 1
+        }
+    } elseif ($installedModule.Version -lt $latestModule.Version) {
+        Write-Host "⚠️ A newer version of $ModuleName is available. Updating..."
+        try {
+            Remove-Item -Recurse -Force "$ModulePath\$ModuleName"
+            Save-Module -Name $ModuleName -Path $ModulePath -Force
+            Write-Host "✅ $ModuleName updated to version $($latestModule.Version)" -ForegroundColor Green
+        } catch {
+            Write-Host "❌ Failed to update ${ModuleName}: $_" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "✅ $ModuleName is up to date (version $($installedModule.Version))." -ForegroundColor Cyan
+    }
+
+    # Import the module
+    try {
+        Import-Module -Name "$ModulePath\$ModuleName" -Force -ErrorAction Stop
+        Write-Host "✅ $ModuleName imported successfully!" -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Failed to import ${ModuleName}: $_" -ForegroundColor Red
+        exit 1
+    }
+}
+
+<#
+# Function to define the web server function
+function Start-PowerShellWebServer {
+    param (
+        [int]$Port = 8080
+    )
+
+    # Create an HTTP listener
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://+:$Port/")
+    $listener.Start()
+    Write-Host "🚀 Web server started on http://localhost:$Port"
+
+    while ($listener.IsListening) {
+        # Wait for a request
+        $context = $listener.GetContext()
+        $request = $context.Request
+        $response = $context.Response
+
+        # Generate a response
+        $responseString = "<html><body><h1>Hello from .NET PowerShell Web Server!</h1></body></html>"
+        $buffer = [System.Text.Encoding]::UTF8.GetBytes($responseString)
+        $response.ContentLength64 = $buffer.Length
+        $output = $response.OutputStream
+        $output.Write($buffer, 0, $buffer.Length)
+        $output.Close()
+    }
+
+	Show-StartMenu
+
+    # Stop the listener
+    $listener.Stop()
+}
+#>
+
+<#
+# Function to define the web server function
+function Start-PowerShellWebServer {
+    param (
+        [int]$Port = 8080
+    )
+
+    # Create an HTTP listener
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://+:$Port/")
+    $listener.Prefixes.Add("http://+:$Port/start-menu/")  # Add a route for triggering Show-StartMenu
+    $listener.Start()
+    Write-Host "🚀 Web server started on http://localhost:$Port"
+
+    while ($listener.IsListening) {
+        try {
+            # Wait for a request
+            $context = $listener.GetContext()
+            $request = $context.Request
+            $response = $context.Response
+
+            if ($request.Url.AbsolutePath -eq "/start-menu" -and $request.HttpMethod -eq "POST") {
+                # If button was clicked, execute Show-StartMenu
+                Write-Host "🟢 Button clicked, executing Show-StartMenu..."
+                Show-StartMenu
+                $responseString = "<html><body><h1>Show-StartMenu executed!</h1><a href='/'>Go Back</a></body></html>"
+            }
+            else {
+                # Serve main page with a button
+                $responseString = @"
+<html>
+<body>
+    <h1>PowerShell Web Server</h1>
+    <button onclick="fetch('/start-menu', { method: 'POST' }).then(() => alert('Show-StartMenu executed!'));">
+        Start Menu
+    </button>
+</body>
+</html>
+"@
+            }
+
+            # Send response
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($responseString)
+            $response.ContentLength64 = $buffer.Length
+            $output = $response.OutputStream
+            $output.Write($buffer, 0, $buffer.Length)
+            $output.Close()
+        }
+        catch {
+            Write-Host "❌ Error: $_"
+        }
+    }
+
+    # Stop the listener
+    $listener.Stop()
+}
+#>
+
+function install_heidisql-backend {
+    # Create HeidiSQL directory
+    if (-not (Test-Path "${HEIDISQL_DIR_PATH}")) {
+        New-Item -ItemType Directory -Path "${HEIDISQL_DIR_PATH}" | Out-Null
+        Write-Host "Created directory: ${HEIDISQL_DIR_NAME}"
+    } else {
+        Write-Host "Directory already exists: ${HEIDISQL_DIR_NAME}"
+    }
+
+    if (Test-Path "${HEIDISQL_ZIP_PATH}") {
+        Write-Host "${HEIDISQL_ZIP_NAME} already downloaded."
+    } else {
+        # Download HeidiSQL
+        Write-Host "Downloading HeidiSQL ..."
+        # Start-BitsTransfer -Source "${HEIDISQL_URL}" -Destination "${HEIDISQL_ZIP_PATH}"
+		Invoke-WebRequest -Uri ${HEIDISQL_URL} -OutFile ${HEIDISQL_ZIP_PATH}
+
+        # Check if download was successful
+        if (-not (Test-Path "${HEIDISQL_ZIP_PATH}")) {
+            Write-Host "Error: Failed to download HeidiSQL."
+            Pause
+            return
+        }
+    }
+
+    if (Test-Path "${HEIDISQL_UNZIP_PATH}") {
+        Write-Host "${HEIDISQL_UNZIP_NAME} already installed."
+    } else {
+        # Unzip the downloaded file to the installation directory
+        Write-Host "Unzipping HeidiSQL to $TOOLS_DIR_NAME\$HEIDISQL_DIR_NAME\$HEIDISQL_UNZIP_NAME ..."
+        Expand-Archive -Path "$TOOLS_DIR_NAME\$HEIDISQL_DIR_NAME\$HEIDISQL_ZIP_NAME" -DestinationPath "$TOOLS_DIR_NAME\$HEIDISQL_DIR_NAME\$HEIDISQL_UNZIP_NAME" -Force
+	}
+		
+	# Create starter ps1
+	if (-not (Test-Path $HEIDISQL_STARTER_PS1_PATH)) {
+		# Create start-node.ps1 file with the desired content
+		$content = 
+@"
+# PowerShell script to start HeidiSQL
+Set-Location -Path `$PSScriptRoot
+
+# Start HeidiSQL
+Start-Process -FilePath ".\$HEIDISQL_EXEC_NAME"
+
+exit
+"@
+
+		$content | Out-File -FilePath $HEIDISQL_STARTER_PS1_PATH -Force
+
+		Write-Host "${HEIDISQL_STARTER_PS1_PATH} successfully created."
+	} else {
+			Write-Host "File already exists: ${HEIDISQL_STARTER_PS1_PATH}"
+	}
+
+	# Create starter batch
+	create-starter-ps1-exec ${HEIDISQL_STARTER_PS1_NAME} ..\..\..\${POWERSHELL_EXEC_PATH} ${HEIDISQL_STARTER_EXEC_NAME} ${HEIDISQL_STARTER_EXEC_PATH}
+
+	Write-Host "HeidiSQL installed successfully."
+		
+}
+
+function install_mariadb-frontend {
+
+	# TODO check .json file and list every mariadb instances
+	# TODO follow the path database/mariadb/mariadb_version/id/mariadb_instance
+
+	$html=
+@"
+	<script>
+		async function fetchData() {
+			document.getElementById('content').style.display = 'none';
+			document.getElementById('loading').style.display = 'block';
+
+			try {
+				let response = await fetch('/database/mariadb/release/versions');
+				let versions = await response.json();
+				let select = document.getElementById('versionSelect');
+				select.innerHTML = '';
+
+				versions.forEach(version => {
+					let opt = document.createElement('option');
+					opt.value = version;
+					opt.innerText = version;
+					select.appendChild(opt);
+				});
+
+				document.getElementById('loading').style.display = 'none';
+				document.getElementById('content').style.display = 'block';
+			} catch (error) {
+				document.getElementById('loading').innerText = '⚠️ Error fetching data!';
+			}
+		}
+
+		window.onload = fetchData;
+	</script>
+	
+	<div id="loading" style="font-size:20px; color:blue;">⏳ Fetching necessary data...</div>
+
+	<div id="content" style="display:none;">
+		<h2>MariaDB Installation</h2>
+		<form method="POST">
+			<label>Version:</label>
+			<select id="versionSelect" name="version">
+				<option>Loading...</option>
+			</select>
+			<br>
+			<label>Port:</label>
+			<input type="text" name="port" value="3306"/>
+			<br>
+			<label>Database Name:</label>
+			<input type="text" name="dbname"/>
+			<br>
+			<button type="submit">Install MariaDB</button>
+		</form>
+		<button onclick="fetchData()">Refresh Versions</button>
+	</div>
+"@
+
+return $html
+	
+}
+
+function install_mariadb-backend {
+    # install_heidisql-backend
+
+    if (-not (Test-Path "$MARIADB_DIR_PATH")) {
+        New-Item -ItemType Directory -Force -Path "$MARIADB_DIR_PATH" | Out-Null
+    } else {
+        Write-Host "Directory already exists: $MARIADB_DIR_PATH"
+    }
+
+    if (Test-Path "$MARIADB_ZIP_PATH") {
+        Write-Host "${MARIADB_ZIP_NAME} already downloaded."
+    } else {
+        Write-Host "Downloading MariaDB version ${MARIADB_VERSION} ..."
+        # Start-BitsTransfer -Source $MARIADB_URL -Destination "$MARIADB_ZIP_PATH"
+		Invoke-WebRequest -Uri ${MARIADB_URL} -OutFile $MARIADB_ZIP_PATH
+
+        if (-not (Test-Path "$MARIADB_ZIP_PATH")) {
+            Write-Host "Error: Failed to download MariaDB version ${MARIADB_VERSION}."
+            Read-Host "Press Enter to continue"
+            return
+        }
+    }
+
+    if (-not (Test-Path "$MARIADB_UNZIP_PATH")) {
+        Write-Host "Unzipping MariaDB to $MARIADB_UNZIP_PATH ..."
+        Expand-Archive -Path "$MARIADB_ZIP_PATH" -DestinationPath "$MARIADB_DIR_PATH" -Force
+    }
+
+    if (-not (Test-Path "${MARIADB_UNZIP_PATH}\data")) {
+        New-Item -ItemType Directory -Force -Path "${MARIADB_UNZIP_PATH}\data" | Out-Null
+        Write-Host "Initializing MariaDB data directory ..."
+        & "${MARIADB_BIN_PATH}\${MARIADB_INSTALL_EXEC_NAME}"
+    } else {
+        Write-Host "MariaDB data directory already initialized."
+    }
+
+    if (-not (Test-Path $MARIADB_STARTER_PS1_PATH)) {
+        $content = 
+@"
+# PowerShell script to start MariaDB
+Set-Location -Path `$PSScriptRoot
+
+# TODO find out how to run mariadb 1 within a powershell window, or 2 without powershell within mariadb own terminal window. Use the chosen soluton for 
+# mariadb setup as well currently mariadb within powershell is used in mariadb setup
+# 1:
+# Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" "-Command", ".\bin\${MARIADBD_EXEC_NAME} --no-defaults" -WindowStyle Hidden
+# Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" "-Command", ".\bin\${MARIADBD_EXEC_NAME} --no-defaults --console --port=$MARIADB_PORT" -WindowStyle Hidden
+# Last OK
+# Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" "-NoExit", "-Command", "```$host.UI.RawUI.WindowTitle = 'MariaDB'; .\bin\${MARIADBD_EXEC_NAME} --no-defaults --console --port=$MARIADB_PORT" -WindowStyle Minimized
+# Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" "-Command", ".\bin\${MARIADBD_EXEC_NAME} --no-defaults"
+# 2: If I can set powershell window title it is ok as well
+# Start-Process -FilePath ".\bin\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+
+# & .\bin\${MARIADBD_EXEC_NAME} --no-defaults --console --port=$MARIADB_PORT
+
+Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" ``
+    -ArgumentList "-NoExit", "-Command", `@"
+    try {
+        ```$host.UI.RawUI.WindowTitle = 'MariaDB'
+        # Check if MariaDB is already running
+		```$portInUse = Get-NetTCPConnection | Where-Object { ```$_.LocalPort -eq $MARIADB_PORT -and ```$_.State -eq 'Listen' }
+        if (```$portInUse) {
+            Write-Host 'MariaDB is already running.'
+			exit
+        } else {
+			# Start MariaDB
+			.\bin\mariadbd.exe --no-defaults --console --port=$MARIADB_PORT
+		}
+    } catch {
+        Write-Host 'An error occurred while starting MariaDB: ```$_'
+    } finally {
+        # Always set the title to 'MariaDB Stopped' after MariaDB exits
+        ```$host.UI.RawUI.WindowTitle = 'MariaDB Stopped'
+    }
+"`@ ``
+    -WindowStyle Minimized
+exit
+"@
+        $content | Out-File -FilePath $MARIADB_STARTER_PS1_PATH -Force
+        Write-Host "${MARIADB_STARTER_PS1_PATH} successfully created."
+    } else {
+        Write-Host "File already exists: ${MARIADB_STARTER_PS1_PATH}"
+    }
+
+	# Create starter batch
+	create-starter-ps1-exec-backend -PSFileName $MARIADB_STARTER_PS1_NAME `
+		-PSExecRelPath "..\..\..\$POWERSHELL_EXEC_PATH" `
+		-StarterExecName $MARIADB_STARTER_EXEC_NAME `
+		-StarterExecRelPath $MARIADB_STARTER_EXEC_PATH
+	
+	Write-Host "MariaDB installed successfully."
+}
+
+function setup_mariadb-backend ($name, $database, $user, $password) {
+	
+	$DATABASE_NAME = ""
+	$DATABASE_USERNAME = ""
+	$DATABASE_PASSWORD = ""
+	
+	$global:DATABASE_NAME = $null
+	$global:DATABASE_USERNAME = $null
+	$global:DATABASE_PASSWORD = $null
+	
+    $DATABASE_NAME = Read-Host "Enter Signum ${name} database name (or press Enter for default ${database})"
+    if (-not $DATABASE_NAME) { $DATABASE_NAME = $database }
+    Write-Host "Database name: ${DATABASE_NAME}"
+
+    $DATABASE_USERNAME = Read-Host "Enter the username (or press Enter for default ${user})"
+    if (-not $DATABASE_USERNAME) { $DATABASE_USERNAME = $user }
+    Write-Host "Username: ${DATABASE_USERNAME}"
+
+    $DATABASE_PASSWORD = Read-Host "Enter the password (or press Enter for default ${password})"
+    if (-not $DATABASE_PASSWORD) { $DATABASE_PASSWORD = $password }
+    Write-Host "Password: ${DATABASE_PASSWORD}"
+
+    Write-Host "Starting MariaDB server ..."
+	# Last OK
+    # Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	
+	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+
+    Start-Sleep -Seconds $SLEEP_SECONDS
+
+    Write-Host "Creating database: ${DATABASE_NAME}"
+	$createDatabaseQuery = "CREATE DATABASE IF NOT EXISTS ``${DATABASE_NAME}``;"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $createDatabaseQuery
+
+    Write-Host "Creating user: ${DATABASE_USERNAME}"
+	$createUserQuery = "CREATE USER IF NOT EXISTS '${DATABASE_USERNAME}'@'localhost' IDENTIFIED BY '${DATABASE_PASSWORD}';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $createUserQuery
+
+    Write-Host "Granting permissions to user ${DATABASE_USERNAME} on database ${DATABASE_NAME} ..."
+	$grantPermissionsQuery = "GRANT ALL PRIVILEGES ON ``${DATABASE_NAME}``.* TO '${DATABASE_USERNAME}'@'localhost';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $grantPermissionsQuery
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e "FLUSH PRIVILEGES;"
+
+	$global:DATABASE_NAME = $DATABASE_NAME
+	$global:DATABASE_USERNAME = $DATABASE_USERNAME
+	$global:DATABASE_PASSWORD = $DATABASE_PASSWORD
+
+    Write-Host "MariaDB setup complete."
+}
+
+function setup_mariadb_readonly-backend ($name, $database, $user, $password) {
+	
+	$DATABASE_NAME = ""
+	$DATABASE_USERNAME = ""
+	$DATABASE_PASSWORD = ""
+	
+	$global:DATABASE_NAME = $null
+	$global:DATABASE_USERNAME = $null
+	$global:DATABASE_PASSWORD = $null
+	
+	$DATABASE_NAME = $database
+    Write-Host "Database name: ${DATABASE_NAME}"
+
+    $DATABASE_USERNAME = Read-Host "Enter the username (or press Enter for default ${user})"
+    if (-not $DATABASE_USERNAME) { $DATABASE_USERNAME = $user }
+    Write-Host "Username: ${DATABASE_USERNAME}"
+
+    $DATABASE_PASSWORD = Read-Host "Enter the password (or press Enter for default ${password})"
+    if (-not $DATABASE_PASSWORD) { $DATABASE_PASSWORD = $password }
+    Write-Host "Password: ${DATABASE_PASSWORD}"
+
+    Write-Host "Starting MariaDB server ..."
+	# Last OK
+    # Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	
+	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+
+    Start-Sleep -Seconds $SLEEP_SECONDS
+
+    Write-Host "Creating user: ${DATABASE_USERNAME}"
+	$createUserQuery = "CREATE USER IF NOT EXISTS '${DATABASE_USERNAME}'@'localhost' IDENTIFIED BY '${DATABASE_PASSWORD}';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $createUserQuery
+
+    Write-Host "Granting permissions to user ${DATABASE_USERNAME} on database ${DATABASE_NAME} ..."
+	$grantPermissionsQuery = "GRANT SELECT, SHOW VIEW ON ``${DATABASE_NAME}``.* TO '${DATABASE_USERNAME}'@'localhost';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $grantPermissionsQuery
+
+<#
+	# Indexing
+	# SQL commands to execute
+	$sqlCommands = 
+@"
+USE ``${DATABASE_NAME}``;
+CREATE INDEX transaction_height_timestamp ON transaction(height, timestamp);
+CREATE INDEX asset_height ON asset(height);
+CREATE INDEX account_latest ON account(latest);
+"@
+	
+	# Execute each SQL command
+	& "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $sqlCommands
+#>	
+	
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e "FLUSH PRIVILEGES;"
+
+	$global:DATABASE_NAME = $DATABASE_NAME
+	$global:DATABASE_USERNAME = $DATABASE_USERNAME
+	$global:DATABASE_PASSWORD = $DATABASE_PASSWORD
+
+    Write-Host "MariaDB setup complete."
+}
+
+
+# TODO important fentch mariadb version data once and after refresh page
+function Start-PowerShellWebServer_1 {
+    param ([int]$Port = 8080)
+
+	# Load GUI contets
+	$mariadb_htmlContent = install_mariadb-frontend
+
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://+:$Port/")
+    $listener.Start()
+    Write-Host "🚀 Web server started on http://localhost:$Port"
+
+	# Start browser
+	Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH"  -ArgumentList "--user-data-dir=.\$BROWSER_CHROMIUM_PROFILE_DIR_NAME", "http://localhost:$Port"
+
+    while ($listener.IsListening) {
+        $context = $listener.GetContext()
+        $request = $context.Request
+        $response = $context.Response
+        $urlPath = $request.Url.AbsolutePath
+
+        if ($urlPath -eq "/database/mariadb/release/versions") {
+            # Fetch MariaDB versions dynamically
+            $mariadbVersions = Fetch-MariaDBVersions
+            $jsonResponse = ConvertTo-Json -InputObject $mariadbVersions
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResponse)
+            $response.ContentType = "application/json"
+        }
+        else {
+            # Initial HTML page with JavaScript to load data
+            $html = 
+@"
+<html>
+<head>
+	<title>MariaDB Installer</title>
+</head>
+<body>
+$mariadb_htmlContent
+</body>
+</html>
+"@
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+            $response.ContentType = "text/html"
+        }
+
+        # Send response
+        $response.ContentLength64 = $buffer.Length
+        $output = $response.OutputStream
+        $output.Write($buffer, 0, $buffer.Length)
+        $output.Close()
+    }
+
+    $listener.Stop()
+}
+
+# Function to Fetch MariaDB Versions from API
+function Fetch-MariaDBVersions {
+    try {
+        $apiUrl = "https://downloads.mariadb.org/rest-api/mariadb-10.6/"
+        $response = Invoke-RestMethod -Uri $apiUrl -Method Get
+        $versions = $response.releases.version
+
+        # Sort and take the latest 10 versions
+        return ($versions | Sort-Object -Descending)[0..9]
+    }
+    catch {
+        Write-Host "⚠️ Error fetching MariaDB versions from API"
+        return @("10.6.21", "10.6.20", "10.6.19", "10.6.18", "10.6.17", "10.6.16", "10.6.15", "10.6.14", "10.6.13", "10.6.12")
+    }
+}
+
+# Start the Web Server
+# Start-PowerShellWebServer -Port 8080
+
+
+
+function setup_mariadb_explorer-backend ($name, $database, $user, $password) {
+	
+	$DATABASE_NAME = ""
+	$DATABASE_USERNAME = ""
+	$DATABASE_PASSWORD = ""
+	
+	$global:DATABASE_NAME = $null
+	$global:DATABASE_USERNAME = $null
+	$global:DATABASE_PASSWORD = $null
+	
+    $DATABASE_NAME = Read-Host "Enter Signum ${name} database name (or press Enter for default ${database})"
+    if (-not $DATABASE_NAME) { $DATABASE_NAME = $database }
+    Write-Host "Database name: ${DATABASE_NAME}"
+
+    $DATABASE_USERNAME = Read-Host "Enter the username (or press Enter for default ${user})"
+    if (-not $DATABASE_USERNAME) { $DATABASE_USERNAME = $user }
+    Write-Host "Username: ${DATABASE_USERNAME}"
+
+    $DATABASE_PASSWORD = Read-Host "Enter the password (or press Enter for default ${password})"
+    if (-not $DATABASE_PASSWORD) { $DATABASE_PASSWORD = $password }
+    Write-Host "Password: ${DATABASE_PASSWORD}"
+
+    Write-Host "Starting MariaDB server ..."
+	# Last OK
+    # Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults" -WindowStyle Minimized
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
+	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
+	
+	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+
+    Start-Sleep -Seconds $SLEEP_SECONDS
+
+    Write-Host "Creating database: ${DATABASE_NAME}"
+	$createDatabaseQuery = "CREATE DATABASE IF NOT EXISTS ``${DATABASE_NAME}``;"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $createDatabaseQuery
+
+    Write-Host "Creating user: ${DATABASE_USERNAME}"
+	$createUserQuery = "CREATE USER IF NOT EXISTS '${DATABASE_USERNAME}'@'localhost' IDENTIFIED BY '${DATABASE_PASSWORD}';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $createUserQuery
+
+    Write-Host "Granting permissions to user ${DATABASE_USERNAME} on database ${DATABASE_NAME} ..."
+	$grantPermissionsQuery = "GRANT ALL PRIVILEGES ON ``${DATABASE_NAME}``.* TO '${DATABASE_USERNAME}'@'localhost';"
+    & "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $grantPermissionsQuery
+
+	# Define the SQL queries
+	$sqlQueryGetUser = "SELECT '$DATABASE_USERNAME' FROM mysql.user;"
+
+	$sqlQueryCreateTable = 
+@"
+USE $DATABASE_NAME;
+
+CREATE TABLE scan_peermonitor (
+	announced_address VARCHAR(255) PRIMARY KEY,
+	real_ip VARCHAR(255),
+	platform VARCHAR(255),
+	application VARCHAR(255),
+	version VARCHAR(255),
+	height INTEGER,
+	cumulative_difficulty VARCHAR(255),
+	country_code CHAR(2),
+	state SMALLINT,
+	downtime INTEGER DEFAULT 0,
+	lifetime INTEGER DEFAULT 0,
+	availability FLOAT DEFAULT 0,
+	last_online_at TIMESTAMP,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	reward_state VARCHAR(255) DEFAULT 'none',
+	reward_time TIMESTAMP
+);
+"@
+
+	# Run the queries
+	Write-Host "Executing query to retrieve user details..."
+	& "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $sqlQueryGetUser
+
+	Write-Host "Creating table in the Signum ${name} database..."
+	& "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e $sqlQueryCreateTable
+	& "${MARIADB_BIN_PATH}\${MARIADB_EXEC_NAME}" --user=root --password= -e "FLUSH PRIVILEGES;"
+	
+	$global:DATABASE_NAME = $DATABASE_NAME
+	$global:DATABASE_USERNAME = $DATABASE_USERNAME
+	$global:DATABASE_PASSWORD = $DATABASE_PASSWORD
+
+    Write-Host "MariaDB setup complete."
+}
+
+# Function to define the web server function
+function Start-PowerShellWebServer {
+    param (
+        [int]$Port = 8080
+    )
+
+    # Create an HTTP listener
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://+:$Port/")
+    $listener.Prefixes.Add("http://+:$Port/start-menu/")  # Ensure trailing /
+
+    $listener.Start()
+    Write-Host "🚀 Web server started on http://localhost:$Port"
+
+	# Start browser
+	Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH"  -ArgumentList "--user-data-dir=.\$BROWSER_CHROMIUM_PROFILE_DIR_NAME", "http://localhost:$WEB_GUI_PORT"
+	
+	# Serve the installation form
+	$html = 
+@"
+<html>
+<head><title>MariaDB Installer</title></head>
+<body>
+	# TODO adding frontend functions and checks here calling functions calculate neccessary values
+	<h2>MariaDB Installation</h2>
+	<form method='POST'>
+		<label>Version:</label>
+		<select name='version'>
+			<option value='10.6.10'>10.6.10</option>
+			<option value='10.5.8'>10.5.8</option>
+		</select>
+		<br>
+		<label>Port:</label>
+		<input type='text' name='port' value='3306'/>
+		<br>
+		<label>Database Name:</label>
+		<input type='text' name='dbname'/>
+		<br>
+		<button type='submit'>Install MariaDB</button>
+	</form>
+</body>
+</html>
+"@
+
+    while ($listener.IsListening) {
+        try {
+            # Wait for a request
+            $context = $listener.GetContext()
+            $request = $context.Request
+            $response = $context.Response
+
+			# Check if data was submitted
+			if ($request.HttpMethod -eq "POST") {
+				$reader = New-Object System.IO.StreamReader($request.InputStream, $request.ContentEncoding)
+				$postData = $reader.ReadToEnd()
+				$reader.Close()
+	
+				# Process installation request
+				Install-MariaDB $postData
+			}
+
+
+
+            if ($request.Url.AbsolutePath -eq "/start-menu/" -and $request.HttpMethod -eq "POST") {
+                # Run Show-StartMenu in the background (asynchronously)
+                # Start-Job -ScriptBlock { Show-StartMenu }
+				# Show-StartMenu
+                Write-Host "🟢 Button clicked, Show-StartMenu is running in background..."
+
+				# TODO run with portable PowerShell
+				# Run Show-StartMenu in a new terminal window
+				Start-Process -FilePath $POWERSHELL_EXEC_PATH -ArgumentList "-NoExit -NoProfile -ExecutionPolicy Bypass -Command `"Show-StartMenu`""
+				# -Verb RunAs
+                # Start-Process -NoNewWindow -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Show-StartMenu`""
+                Write-Host "🟢 Button clicked, Show-StartMenu is running in a new terminal..."
+
+
+                $responseString = "<html><body><h1>Show-StartMenu executed in the background!</h1><a href='/'>Go Back</a></body></html>"
+            }
+            else {
+                # Serve main page with a button
+                $responseString = @"
+<html>
+<body>
+    <h1>PowerShell Web Server</h1>
+    <button onclick="fetch('/start-menu/', { method: 'POST' }).then(() => alert('Show-StartMenu executed!'));">
+        Start Menu
+    </button>
+</body>
+</html>
+"@
+            }
+
+            # Send response
+            # $buffer = [System.Text.Encoding]::UTF8.GetBytes($responseString)
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+            $response.ContentLength64 = $buffer.Length
+            $output = $response.OutputStream
+            $output.Write($buffer, 0, $buffer.Length)
+            $output.Close()
+        }
+        catch {
+            Write-Host "❌ Error: $_"
+        }
+    }
+
+    # Stop the listener
+    $listener.Stop()
+}
+
+
+
+# Function to Open WEB GUI
+function Get-WebPage {
+    $databaseRows = $config.databases | ForEach-Object { "<tr><td>$_</td><td><button onclick=`"deleteDatabase('$_')`">Delete</button></td></tr>" }
+
+    $userRows = $config.users.Keys | ForEach-Object {
+        $assignedDBs = $config.users[$_]["databases"].Keys -join ", "
+        "<tr><td>$_</td><td>$assignedDBs</td><td><button onclick=`"deleteUser('$_')`">Remove</button></td></tr>"
+    }
+
+    $page = html {
+        head {
+            title { "MariaDB Manager" }
+            style { "body { font-family: Arial, sans-serif; padding: 20px; } button { background: #28a745; color: white; }" }
+            script {
+@"
+function addDatabase() {
+	let dbName = document.getElementById('newDatabase').value;
+	fetch('/api?action=addDatabase&dbName=' + encodeURIComponent(dbName))
+	.then(response => response.json())
+	.then(data => { alert(data.message); if (data.status === 'success') location.reload(); });
+}
+
+function addUser() {
+	let username = document.getElementById('newUsername').value;
+	let password = document.getElementById('newPassword').value;
+	fetch('/api?action=addUser&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password))
+	.then(response => response.json())
+	.then(data => { alert(data.message); if (data.status === 'success') location.reload(); });
+}
+
+function assignUser() {
+	let username = document.getElementById('assignUsername').value;
+	let dbName = document.getElementById('assignDatabase').value;
+	let permission = document.getElementById('assignPermission').value;
+	fetch('/api?action=assignUser&username=' + encodeURIComponent(username) + '&dbName=' + encodeURIComponent(dbName) + '&permission=' + encodeURIComponent(permission))
+	.then(response => response.json())
+	.then(data => { alert(data.message); if (data.status === 'success') location.reload(); });
+}
+
+function deleteUser(username) {
+	fetch('/api?action=deleteUser&username=' + encodeURIComponent(username))
+	.then(response => response.json())
+	.then(data => { alert(data.message); if (data.status === 'success') location.reload(); });
+}
+"@
+            }
+        }
+        body {
+            h1 { "MariaDB Server Management" }
+
+            input -type 'text' -id 'newDatabase' -placeholder 'Enter database name'
+            button -type 'button' -onclick "addDatabase()" { "Add New Database" }
+            hr
+            table -id 'databaseTable' {
+                tr { th { "Database Name" } th { "Action" } }
+                $databaseRows
+            }
+
+            hr
+            h2 { "User Management" }
+            input -type 'text' -id 'newUsername' -placeholder 'Username'
+            input -type 'password' -id 'newPassword' -placeholder 'Password'
+            button -type 'button' -onclick "addUser()" { "Add User" }
+
+            hr
+            table -id 'userTable' {
+                tr { th { "User" } th { "Assigned Databases" } th { "Action" } }
+                $userRows
+            }
+
+            hr
+            select -id 'assignUsername' { $config.users.Keys | ForEach-Object { option { $_ } } }
+            select -id 'assignDatabase' { $config.databases | ForEach-Object { option { $_ } } }
+            select -id 'assignPermission' { option { "ALL" } option { "SELECT" } }
+            button -type 'button' -onclick "assignUser()" { "Assign User" }
+        }
+    }
+    return $page
+}
+
+
+# Ensure PSHTML and Pode are installed in the portable path
+# Ensure-PortableModule -ModuleName "PSHTML"
+# Ensure-PortableModule -ModuleName "Pode"
+
+
+#================#
+# Function calls #
+#================#
+
+# Check if running as Admin/root
+if (-not (Test-IsAdmin)) {
+    Write-Host "❌ Not running as Administrator/root. Elevating now..." -ForegroundColor Red
+    Restart-AsAdmin
+} else {
+    Write-Host "✅ Running with elevated privileges!" -ForegroundColor Green
+}
+
+# Download documentations
+install-doc-init-backend
+
+# TODO
+# Dev steps
+# 1 MAriadb install - frontend + backend
+# 2 Write datas into JOSN file
+# 3 function to check json consistenci regardong folders -> syncronization
+# 4 database and user syncronization with json -> need to log in to database
+# 5 Manual update root user if changed
+# 6 Fetching MariaDB versions
+# 7 Possibilities to install more instances
+# 8 Read out mariadb ini file for port
+
+# TODO open new tab instead of open new window
+# TODO check installation and only install if needed
+# TODO extensin manual install is not working on browser
+# TODO letöltési hiba: nem sikerült a bővítmény könyvtárat áthelyezni a profilba
+# TODO rename functions to backand and frontend
+# TODO create .json file to populate input forms add checkbox + update buton to update json file if user make the changes outside the installer
+# TODO request datas if user want to syncronise -> need database user + password, update if not correct
+# Install portable browser 
+install_chromium_browser_backend
+# TODO Install Chromium browser if not yet installed
+# start-process-menu-backend $BROWSER_CHROMIUM_STARTER_PS1_PATH "Chromium Browser" {install_chromium_browser}
+
+# Modul installation check
+# Ensure-PortableModule -ModuleName "PSHTML"
+# Ensure-PortableModule -ModuleName "ThreadJob"
+
+# Start-WebServer -Port 8080 -Content { "Hello, PowerShell!" }
+
+# Start the web server in the background
+<#
+Start-Job -ScriptBlock {
+    Import-Module WebServer
+    Start-WebServer -Port 8089 -Content { "Hello, PowerShell!" }
+	# Start-WebServer
+}
+#>
+
+<#
+Start-Job -ScriptBlock {
+    #Import-Module WebServer
+    Start-PowerShellWebServer -Port 8080
+	# Start-WebServer
+}
+#>
+
+# Start the web server
+# Start-PowerShellWebServer -Port $WEB_GUI_PORT
+
+# TODO replace port check within PS1 starters with cross platform compatible Test-PortAvailability method, or make different chack based on platform
+# Check if the port is already in use
+if (Test-PortAvailability -Port $WEB_GUI_PORT) {
+    Write-Host "✅ Port $WEB_GUI_PORT is available. Starting server..." -ForegroundColor Green
+    try {
+		<#
+		$job = Start-ThreadJob -Name "PowerShellWebServerJob" -ScriptBlock {
+			param ($Port)
+			Start-PowerShellWebServer -Port $Port
+		} -ArgumentList 8080
+		#>
+		# TODO open in portable browser within new tab if browser is open
+        # Start-PowerShellWebServer -Port $WEB_GUI_PORT
+		Start-PowerShellWebServer_1 -Port $WEB_GUI_PORT
+    } catch {
+        Write-Host "❌ Error starting server: $_" -ForegroundColor Red
+		Pause
+        exit 1
+    }
+} else {
+	# TODO open WEB GUI within portable browser
+    Write-Host "⚠️ Port $WEB_GUI_PORT is already in use. Server might be running." -ForegroundColor Yellow
+}
+
+
+
+
+# Start-PSHTMLServer -port $WEB_GUI_PORT -Content { param ($request) Handle-Request @($request.Query) }
+Write-Host "Server started at http://localhost:$WEB_GUI_PORT"
+
+Pause
+
+# TODO Mariadb port user and password check (maybe from init config) to use for database query for list
+# Store root/admin user/password and databases on json to request databases pipe to use default root account or use custom one
+# Add/remove database
+# Add/remove user
+# TODO wireshark portable
+
+# GUI functions
+# Install Chromium browser
+
+# Start web-GUI
+
+# Show-InstallMenu-GUI
