@@ -12,6 +12,8 @@ $DATABASE_NAME = $null
 $DATABASE_USERNAME = $null
 $DATABASE_PASSWORD = $null
 
+$DOWNLOADS_DIR_NAME = "Downloads"
+
 $SLEEP_SECONDS = 20
 
 ### PowerShell variables ###
@@ -309,16 +311,19 @@ $MARIADB_INSTALL_EXEC_NAME = "mysql_install_db.exe"
 $MARIADB_VERSION = "10.6.20"
 $MARIADB_DIR_NAME = "MariaDB"
 # TODO thinking about naming convetion
-$MARIADB_NAME_DIR = "MariaDB"
+# $MARIADB_NAME_DIR = "MariaDB"
 $MARIADB_DIR_PATH = "${DATABASE_DIR}\${MARIADB_DIR_NAME}"
-$MARIADB_PATH_DIR = "${DATABASE_DIR}\${MARIADB_DIR_NAME}"
+$MARIADB_DOWNLOADS_DIR_PATH = "$MARIADB_DIR_PATH\$DOWNLOADS_DIR_NAME"
 $MARIADB_UNZIP_NAME = "mariadb-${MARIADB_VERSION}-winx64"
 $MARIADB_ZIP_NAME = "${MARIADB_UNZIP_NAME}.zip"
-$MARIADB_UNZIP_PATH = "${MARIADB_DIR_PATH}\${MARIADB_UNZIP_NAME}"
-$MARIADB_ZIP_PATH = "${MARIADB_DIR_PATH}\${MARIADB_ZIP_NAME}"
-$MARIADB_BIN_PATH = "${MARIADB_UNZIP_PATH}\bin"
-$MARIADB_STARTER_PS1_PATH = "${MARIADB_UNZIP_PATH}\${MARIADB_STARTER_PS1_NAME}"
-$MARIADB_STARTER_EXEC_PATH = "${MARIADB_UNZIP_PATH}\${MARIADB_STARTER_EXEC_NAME}"
+# $MARIADB_UNZIP_PATH = "${MARIADB_DIR_PATH}\${MARIADB_UNZIP_NAME}"
+# TODO delete MARIADB_UNZIP_PATH
+$MARIADB_UNZIP_PATH = "${MARIADB_DOWNLOADS_DIR_PATH}\${MARIADB_UNZIP_NAME}"
+$MARIADB_ZIP_PATH = "${MARIADB_DOWNLOADS_DIR_PATH}\${MARIADB_ZIP_NAME}"
+$MARIADB_BIN_PATH = "${MARIADB_DIR_PATH}\bin"
+$MARIADB_DATA_PATH = "${MARIADB_DIR_PATH}\data"
+$MARIADB_STARTER_PS1_PATH = "${MARIADB_DIR_PATH}\${MARIADB_STARTER_PS1_NAME}"
+$MARIADB_STARTER_EXEC_PATH = "${MARIADB_DIR_PATH}\${MARIADB_STARTER_EXEC_NAME}"
 $MARIADB_URL = "https://archive.mariadb.org/mariadb-${MARIADB_VERSION}/winx64-packages/mariadb-${MARIADB_VERSION}-winx64.zip"
 $MARIADB_PORT = 3306
 $MARIADB_ROOT_USER = "root"
@@ -332,12 +337,9 @@ function updateMariadbVariables {
 
     $global:MARIADB_VERSION = $version
     $global:MARIADB_UNZIP_NAME = "mariadb-${global:MARIADB_VERSION}-winx64"
+	$global:MARIADB_UNZIP_PATH = "${global:MARIADB_DOWNLOADS_DIR_PATH}\${global:MARIADB_UNZIP_NAME}"
     $global:MARIADB_ZIP_NAME = "${global:MARIADB_UNZIP_NAME}.zip"
-    $global:MARIADB_UNZIP_PATH = "${global:MARIADB_DIR_PATH}\${global:MARIADB_UNZIP_NAME}"
-    $global:MARIADB_ZIP_PATH = "${global:MARIADB_DIR_PATH}\${global:MARIADB_ZIP_NAME}"
-    $global:MARIADB_BIN_PATH = "${global:MARIADB_UNZIP_PATH}\bin"
-    $global:MARIADB_STARTER_PS1_PATH = "${global:MARIADB_UNZIP_PATH}\${global:MARIADB_STARTER_PS1_NAME}"
-    $global:MARIADB_STARTER_EXEC_PATH = "${global:MARIADB_UNZIP_PATH}\${global:MARIADB_STARTER_EXEC_NAME}"
+	$global:MARIADB_ZIP_PATH = "${global:MARIADB_DOWNLOADS_DIR_PATH}\${global:MARIADB_ZIP_NAME}"
     $global:MARIADB_URL = "https://archive.mariadb.org/mariadb-${global:MARIADB_VERSION}/winx64-packages/mariadb-${global:MARIADB_VERSION}-winx64.zip"
     $global:MARIADB_PORT = $Port
 }
@@ -8072,7 +8074,7 @@ function install_mariadb-frontend {
 			try {
 				let response = await fetch('/database/mariadb/release/versions');
 				let versions = await response.json();
-				let select = document.getElementById('versionSelect');
+				let select = document.getElementById('mariadbVersionSelect');
 				select.innerHTML = '';
 
 				versions.forEach(version => {
@@ -8093,12 +8095,10 @@ function install_mariadb-frontend {
 
 			const version = document.getElementById('mariadbVersionSelect').value;
 			const port = document.getElementById('mariadbPort').value;
-			const dbname = document.getElementById('mariadbDatabaseName').value;
 
 			const payload = {
 				version: version,
-				port: port,
-				dbname: dbname
+				port: port
 			};
 
 			try {
@@ -8134,14 +8134,9 @@ function install_mariadb-frontend {
 			<select id="mariadbVersionSelect" name="version">
 				<option>Loading...</option>
 			</select>
-			<br>
 			<label>Port:</label>
-			<input type="text" id="mariadbPort" value="3306"/>
+			<input type="text" id="mariadbPort" value="$MARIADB_PORT"/>
 			<!--TODO Check all mariadb installation ports and set red color if port is already used, else green-->
-			<br>
-			<label>Database Name:</label>
-			<input type="text" id="mariadbDatabaseName" value="signum"/>
-			<br>
 			<!--TODO Check all mariadb installation fields and set Install button active if all check is correct, else set button to inactive-->
 		</form>
 		<button onclick="callInstallMariadbBackend()">Install MariaDB</button>
@@ -8153,42 +8148,114 @@ return $html
 	
 }
 
+# TODO naming
 function install_mariadb-backend {
     # install_heidisql-backend
 
-    if (-not (Test-Path "$MARIADB_DIR_PATH")) {
-        New-Item -ItemType Directory -Force -Path "$MARIADB_DIR_PATH" | Out-Null
-    } else {
-        Write-Host "Directory already exists: $MARIADB_DIR_PATH"
-    }
+	# TODO more comments
+
+	if (-not (Test-Path $MARIADB_DIR_PATH)) {
+		try {
+			New-Item -ItemType Directory -Force -Path $MARIADB_DIR_PATH -ErrorAction Stop | Out-Null
+			Write-Host "Directory created successfully: $MARIADB_DIR_PATH" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Error occurred during directory creation: $MARIADB_DIR_PATH" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+		}
+	} else {
+		Write-Host "Directory already exists: $MARIADB_DIR_PATH" -ForegroundColor Green
+	}
+	
+	if (-not (Test-Path $MARIADB_DOWNLOADS_DIR_PATH)) {
+		try {
+			New-Item -ItemType Directory -Force -Path $MARIADB_DOWNLOADS_DIR_PATH -ErrorAction Stop | Out-Null
+			Write-Host "Directory created successfully: $MARIADB_DOWNLOADS_DIR_PATH" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Error occurred during directory creation: $MARIADB_DOWNLOADS_DIR_PATH" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+		}
+	} else {
+		Write-Host "Directory already exists: $MARIADB_DOWNLOADS_DIR_PATH" -ForegroundColor Green
+	}
 
     if (Test-Path "$MARIADB_ZIP_PATH") {
-        Write-Host "${MARIADB_ZIP_NAME} already downloaded."
+        Write-Host "${MARIADB_ZIP_NAME} already downloaded." -ForegroundColor Green
     } else {
-        Write-Host "Downloading MariaDB version ${MARIADB_VERSION} ..."
-        # Start-BitsTransfer -Source $MARIADB_URL -Destination "$MARIADB_ZIP_PATH"
-		Invoke-WebRequest -Uri ${MARIADB_URL} -OutFile $MARIADB_ZIP_PATH
-
-        if (-not (Test-Path "$MARIADB_ZIP_PATH")) {
-            Write-Host "Error: Failed to download MariaDB version ${MARIADB_VERSION}."
-            Read-Host "Press Enter to continue"
+        try {
+			Invoke-WebRequest -Uri ${MARIADB_URL} -OutFile $MARIADB_ZIP_PATH
+			Write-Host "MariaDB version downloaded successfully: ${MARIADB_VERSION}" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Failed to download MariaDB version ${MARIADB_VERSION}" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+			Read-Host "Press Enter to continue"
             return
-        }
+		}
     }
 
-    if (-not (Test-Path "$MARIADB_UNZIP_PATH")) {
-        Write-Host "Unzipping MariaDB to $MARIADB_UNZIP_PATH ..."
-        Expand-Archive -Path "$MARIADB_ZIP_PATH" -DestinationPath "$MARIADB_DIR_PATH" -Force
+	# Unzip MariaDB to Downloads folder
+	if (-not (Test-Path "$MARIADB_UNZIP_PATH")) {
+		try {
+			Expand-Archive -Path "$MARIADB_ZIP_PATH" -DestinationPath "$MARIADB_DOWNLOADS_DIR_PATH" -Force
+			Write-Host "MariaDB successfully unzipped to $MARIADB_UNZIP_PATH" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Failed to unzip MariaDB version ${MARIADB_VERSION}" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+			Read-Host "Press Enter to continue"
+			return
+		}
+	} else {
+		Write-Host "MariaDB already unzipped to $MARIADB_UNZIP_PATH" -ForegroundColor Green
+	}
+
+	# Check MariaDB installation
+    if (-not (Test-Path "$MARIADB_BIN_PATH")) {
+        try {
+			Copy-Item -Path "$MARIADB_UNZIP_PATH\*" -Destination $MARIADB_DIR_PATH -Recurse -Force
+			Write-Host "MariaDB successfully installed to $MARIADB_DIR_PATH" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Failed to install MariaDB version ${MARIADB_VERSION}" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+			Read-Host "Press Enter to continue"
+            return
+		}
     }
 
-    if (-not (Test-Path "${MARIADB_UNZIP_PATH}\data")) {
-        New-Item -ItemType Directory -Force -Path "${MARIADB_UNZIP_PATH}\data" | Out-Null
-        Write-Host "Initializing MariaDB data directory ..."
-        & "${MARIADB_BIN_PATH}\${MARIADB_INSTALL_EXEC_NAME}"
+	# TODO create version json
+
+	# Create data dir if not exists
+    if (-not (Test-Path "$MARIADB_DATA_PATH")) {
+		try {
+			New-Item -ItemType Directory -Force -Path $MARIADB_DATA_PATH -ErrorAction Stop | Out-Null
+			Write-Host "Directory created successfully: $MARIADB_DATA_PATH" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Error occurred during directory creation: $MARIADB_DATA_PATH" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+		}
     } else {
-        Write-Host "MariaDB data directory already initialized."
+		Write-Host "Directory already exists: $MARIADB_DATA_PATH" -ForegroundColor Green
     }
 
+	# Initializing MariaDB data directory
+	if (-not (Test-Path "$MARIADB_DATA_PATH\my.ini")) {
+		try {
+			& "${MARIADB_BIN_PATH}\${MARIADB_INSTALL_EXEC_NAME}"
+			Write-Host "MariaDB data directory initialized successfully" -ForegroundColor Green
+		}
+		catch {
+			Write-Host "Error occurred during MariaDB data directory initialization" -ForegroundColor Red
+			Write-Host "Error message: $PSItem" -ForegroundColor Red
+		}
+	} else {
+		Write-Host "MariaDB data directory already initialized" -ForegroundColor Green
+	}
+
+	# TODO error handling
     if (-not (Test-Path $MARIADB_STARTER_PS1_PATH)) {
         $content = 
 @"
@@ -8208,7 +8275,7 @@ Set-Location -Path `$PSScriptRoot
 
 # & .\bin\${MARIADBD_EXEC_NAME} --no-defaults --console --port=$MARIADB_PORT
 
-Start-Process -FilePath "..\..\..\${POWERSHELL_EXEC_PATH}" ``
+Start-Process -FilePath "..\..\${POWERSHELL_EXEC_PATH}" ``
     -ArgumentList "-NoExit", "-Command", `@"
     try {
         ```$host.UI.RawUI.WindowTitle = 'MariaDB'
@@ -8239,7 +8306,7 @@ exit
 
 	# Create starter batch
 	create-starter-ps1-exec-backend -PSFileName $MARIADB_STARTER_PS1_NAME `
-		-PSExecRelPath "..\..\..\$POWERSHELL_EXEC_PATH" `
+		-PSExecRelPath "..\..\$POWERSHELL_EXEC_PATH" `
 		-StarterExecName $MARIADB_STARTER_EXEC_NAME `
 		-StarterExecRelPath $MARIADB_STARTER_EXEC_PATH
 	
@@ -8434,17 +8501,16 @@ $mariadb_htmlContent
 
 					$version = $data.version
 					$port = $data.port
-					$dbname = $data.dbname
 
-					Write-Host("version: $version")
+					Write-Host("MariaDB Install started") -ForegroundColor Blue
+					Write-Host("MariaDB version selected: $version") -ForegroundColor Blue
+					Write-Host("MariaDB port selected: $port") -ForegroundColor Blue
 
 					updateMariadbVariables -version $version -port $port
-
-					Write-Host($MARIADB_UNZIP_NAME)
 		
 					install_mariadb-backend
 		
-					$responseStr = "MariaDB install initiated for version $($data.version), port $($data.port), db $($data.dbname)"
+					$responseStr = "MariaDB install initiated for version $($data.version), port $($data.port)"
 
 					$response.ContentType = "application/json"
 					$response.ContentEncoding = [System.Text.Encoding]::UTF8
@@ -8503,7 +8569,7 @@ function Fetch-MariaDBVersions {
 
         $versions = $response.releases.PSObject.Properties.Name
 
-        Write-Host "Versions: $($versions -join ', ')"
+        Write-Host "MariaDB fetched versions: $($versions -join ', ')"
 
         # Sort and take the latest 10 versions
         return $versions
