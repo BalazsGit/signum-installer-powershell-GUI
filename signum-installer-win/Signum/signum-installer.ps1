@@ -6,11 +6,11 @@ $WEB_GUI_PORT = 8089  # Web UI port
 $CONFIG_FILE_NAME = "config.json"
 
 ### Global variables ###
-$global:UserResponse = $null
+$UserResponse = $null
 
-$global:DATABASE_NAME = $null
-$global:DATABASE_USERNAME = $null
-$global:DATABASE_PASSWORD = $null
+$DATABASE_NAME = $null
+$DATABASE_USERNAME = $null
+$DATABASE_PASSWORD = $null
 
 $SLEEP_SECONDS = 20
 
@@ -308,7 +308,10 @@ $MARIADBD_EXEC_NAME = "mariadbd.exe"
 $MARIADB_INSTALL_EXEC_NAME = "mysql_install_db.exe"
 $MARIADB_VERSION = "10.6.20"
 $MARIADB_DIR_NAME = "MariaDB"
+# TODO thinking about naming convetion
+$MARIADB_NAME_DIR = "MariaDB"
 $MARIADB_DIR_PATH = "${DATABASE_DIR}\${MARIADB_DIR_NAME}"
+$MARIADB_PATH_DIR = "${DATABASE_DIR}\${MARIADB_DIR_NAME}"
 $MARIADB_UNZIP_NAME = "mariadb-${MARIADB_VERSION}-winx64"
 $MARIADB_ZIP_NAME = "${MARIADB_UNZIP_NAME}.zip"
 $MARIADB_UNZIP_PATH = "${MARIADB_DIR_PATH}\${MARIADB_UNZIP_NAME}"
@@ -318,6 +321,26 @@ $MARIADB_STARTER_PS1_PATH = "${MARIADB_UNZIP_PATH}\${MARIADB_STARTER_PS1_NAME}"
 $MARIADB_STARTER_EXEC_PATH = "${MARIADB_UNZIP_PATH}\${MARIADB_STARTER_EXEC_NAME}"
 $MARIADB_URL = "https://archive.mariadb.org/mariadb-${MARIADB_VERSION}/winx64-packages/mariadb-${MARIADB_VERSION}-winx64.zip"
 $MARIADB_PORT = 3306
+$MARIADB_ROOT_USER = "root"
+$MARIADB_ROOT_PASSWORD = ""
+
+function updateMariadbVariables {
+	param (
+        [string]$version,
+		[string]$port
+    )
+
+    $global:MARIADB_VERSION = $version
+    $global:MARIADB_UNZIP_NAME = "mariadb-${global:MARIADB_VERSION}-winx64"
+    $global:MARIADB_ZIP_NAME = "${global:MARIADB_UNZIP_NAME}.zip"
+    $global:MARIADB_UNZIP_PATH = "${global:MARIADB_DIR_PATH}\${global:MARIADB_UNZIP_NAME}"
+    $global:MARIADB_ZIP_PATH = "${global:MARIADB_DIR_PATH}\${global:MARIADB_ZIP_NAME}"
+    $global:MARIADB_BIN_PATH = "${global:MARIADB_UNZIP_PATH}\bin"
+    $global:MARIADB_STARTER_PS1_PATH = "${global:MARIADB_UNZIP_PATH}\${global:MARIADB_STARTER_PS1_NAME}"
+    $global:MARIADB_STARTER_EXEC_PATH = "${global:MARIADB_UNZIP_PATH}\${global:MARIADB_STARTER_EXEC_NAME}"
+    $global:MARIADB_URL = "https://archive.mariadb.org/mariadb-${global:MARIADB_VERSION}/winx64-packages/mariadb-${global:MARIADB_VERSION}-winx64.zip"
+    $global:MARIADB_PORT = $Port
+}
 
 <#
 $DATABASE_NAME = ""
@@ -7799,9 +7822,12 @@ exit
 			Expand-Archive -Path "${BROWSER_CHROMIUM_SIGNUM_XT_MAIN_UNZIP_ORIGINAL_PATH}\dist\${BROWSER_CHROMIUM_SIGNUM_XT_ZIP_NAME}" -DestinationPath "$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_PATH" -Force
 	
 		}
-
+<#
 		Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}",`
 			"--load-extension=.\$BROWSER_CHROMIUM_EXTENSIONS_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_DIR_NAME\$BROWSER_CHROMIUM_SIGNUM_XT_MAIN_DIR_NAME"
+#>
+
+		Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH" -ArgumentList "--user-data-dir=.\${BROWSER_CHROMIUM_PROFILE_DIR_NAME}"
 
 		# Delete files
 		Write-Host "Cleaning $BROWSER_CHROMIUM_EXTENSIONS_DIR_PATH directory."
@@ -8041,9 +8067,7 @@ function install_mariadb-frontend {
 	$html=
 @"
 	<script>
-		async function fetchData() {
-			document.getElementById('content').style.display = 'none';
-			document.getElementById('loading').style.display = 'block';
+		async function fetchMariadbVersions() {
 
 			try {
 				let response = await fetch('/database/mariadb/release/versions');
@@ -8058,35 +8082,70 @@ function install_mariadb-frontend {
 					select.appendChild(opt);
 				});
 
-				document.getElementById('loading').style.display = 'none';
-				document.getElementById('content').style.display = 'block';
 			} catch (error) {
-				document.getElementById('loading').innerText = '⚠️ Error fetching data!';
+				document.getElementById('loading').innerText = 'Error fetching data!';
+				console.error("An error occured during Mariadb Version Fetching:", error);
+				alert("An error occured during Mariadb Version Fetching: " + error.message);
 			}
 		}
 
-		window.onload = fetchData;
+		async function callInstallMariadbBackend() {
+
+			const version = document.getElementById('mariadbVersionSelect').value;
+			const port = document.getElementById('mariadbPort').value;
+			const dbname = document.getElementById('mariadbDatabaseName').value;
+
+			const payload = {
+				version: version,
+				port: port,
+				dbname: dbname
+			};
+
+			try {
+				const response = await fetch('/database/mariadb/install', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(payload)
+				});
+
+				if (!response.ok) {
+					throw new Error("Bad response: " + response.status);
+				}
+
+				const result = await response.text(); // vagy response.json() ha JSON-t vársz
+				alert("MariaDB install eredmény:\n" + result);
+			} catch (error) {
+				console.error("An error occured during Mariadb Installation:", error);
+				alert("An error occured during Mariadb Installation: " + error.message);
+			}
+		}
+
+		window.onload = fetchMariadbVersions;
 	</script>
 	
-	<div id="loading" style="font-size:20px; color:blue;">⏳ Fetching necessary data...</div>
+	<div id="loading" style="font-size:20px; color:blue;">Fetching necessary data...</div>
 
-	<div id="content" style="display:none;">
+	<div id="content" style="display:block;">
 		<h2>MariaDB Installation</h2>
 		<form method="POST">
 			<label>Version:</label>
-			<select id="versionSelect" name="version">
+			<select id="mariadbVersionSelect" name="version">
 				<option>Loading...</option>
 			</select>
 			<br>
 			<label>Port:</label>
-			<input type="text" name="port" value="3306"/>
+			<input type="text" id="mariadbPort" value="3306"/>
+			<!--TODO Check all mariadb installation ports and set red color if port is already used, else green-->
 			<br>
 			<label>Database Name:</label>
-			<input type="text" name="dbname"/>
+			<input type="text" id="mariadbDatabaseName" value="signum"/>
 			<br>
-			<button type="submit">Install MariaDB</button>
+			<!--TODO Check all mariadb installation fields and set Install button active if all check is correct, else set button to inactive-->
 		</form>
-		<button onclick="fetchData()">Refresh Versions</button>
+		<button onclick="callInstallMariadbBackend()">Install MariaDB</button>
+		<button onclick="fetchMariadbVersions()">Refresh Versions</button>
 	</div>
 "@
 
@@ -8216,7 +8275,7 @@ function setup_mariadb-backend ($name, $database, $user, $password) {
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
 	
-	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+	.\$POWERSHELL_EXEC_PATH -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
 
     Start-Sleep -Seconds $SLEEP_SECONDS
 
@@ -8268,7 +8327,7 @@ function setup_mariadb_readonly-backend ($name, $database, $user, $password) {
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
 	
-	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+	.\$POWERSHELL_EXEC_PATH -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
 
     Start-Sleep -Seconds $SLEEP_SECONDS
 
@@ -8307,18 +8366,18 @@ CREATE INDEX account_latest ON account(latest);
 
 # TODO important fentch mariadb version data once and after refresh page
 function Start-PowerShellWebServer_1 {
-    param ([int]$Port = 8080)
+    # param ([int]$Port = 8080)
 
 	# Load GUI contets
 	$mariadb_htmlContent = install_mariadb-frontend
 
     $listener = New-Object System.Net.HttpListener
-    $listener.Prefixes.Add("http://+:$Port/")
+    $listener.Prefixes.Add("http://+:$WEB_GUI_PORT/")
     $listener.Start()
-    Write-Host "🚀 Web server started on http://localhost:$Port"
+    Write-Host "🚀 Web server started on http://localhost:$WEB_GUI_PORT"
 
 	# Start browser
-	Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH"  -ArgumentList "--user-data-dir=.\$BROWSER_CHROMIUM_PROFILE_DIR_NAME", "http://localhost:$Port"
+	Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH"  -ArgumentList "--user-data-dir=.\$BROWSER_CHROMIUM_PROFILE_DIR_NAME", "http://localhost:$WEB_GUI_PORT"
 
     while ($listener.IsListening) {
         $context = $listener.GetContext()
@@ -8326,16 +8385,27 @@ function Start-PowerShellWebServer_1 {
         $response = $context.Response
         $urlPath = $request.Url.AbsolutePath
 
-        if ($urlPath -eq "/database/mariadb/release/versions") {
-            # Fetch MariaDB versions dynamically
-            $mariadbVersions = Fetch-MariaDBVersions
-            $jsonResponse = ConvertTo-Json -InputObject $mariadbVersions
-            $buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResponse)
-            $response.ContentType = "application/json"
-        }
-        else {
-            # Initial HTML page with JavaScript to load data
-            $html = 
+		# TODO check installed versions at starting and every 60 sec or after nyew installation and list it to a new raw
+
+		switch ($request.HttpMethod) {
+			"GET" {
+				if ($urlPath -eq "/database/mariadb/release/versions") {
+					# Fetch MariaDB versions dynamically
+					$mariadbVersions = Fetch-MariaDBVersions
+					$jsonResponse = ConvertTo-Json -InputObject $mariadbVersions
+					$buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResponse)
+					$response.ContentType = "application/json"
+					# Send response
+					$response.ContentLength64 = $buffer.Length
+					<#
+					$output = $response.OutputStream
+					$output.Write($buffer, 0, $buffer.Length)
+					$output.Close()
+					#>
+				} else {
+
+					# Initial HTML page with JavaScript to load data
+					$html = 
 @"
 <html>
 <head>
@@ -8346,15 +8416,72 @@ $mariadb_htmlContent
 </body>
 </html>
 "@
-            $buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
-            $response.ContentType = "text/html"
-        }
+		
+					$buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+					$response.ContentType = "text/html"
+			
+					# Send response
+					$response.ContentLength64 = $buffer.Length
+				}
+			}
+			"POST" {
+				if ($urlPath -eq "/database/mariadb/install") {
+					$reader = New-Object IO.StreamReader $request.InputStream
+					$body = $reader.ReadToEnd()
+					$reader.Close()
+		
+					$data = $body | ConvertFrom-Json
 
-        # Send response
-        $response.ContentLength64 = $buffer.Length
-        $output = $response.OutputStream
-        $output.Write($buffer, 0, $buffer.Length)
-        $output.Close()
+					$version = $data.version
+					$port = $data.port
+					$dbname = $data.dbname
+
+					Write-Host("version: $version")
+
+					updateMariadbVariables -version $version -port $port
+
+					Write-Host($MARIADB_UNZIP_NAME)
+		
+					install_mariadb-backend
+		
+					$responseStr = "MariaDB install initiated for version $($data.version), port $($data.port), db $($data.dbname)"
+
+					$response.ContentType = "application/json"
+					$response.ContentEncoding = [System.Text.Encoding]::UTF8
+					$response.ContentLength64 = ([System.Text.Encoding]::UTF8.GetByteCount($responseStr))
+					$buffer = [System.Text.Encoding]::UTF8.GetBytes($responseStr)
+					<#
+					$output = $response.OutputStream
+					$output.Write($buffer, 0, $buffer.Length)
+					$output.Close()
+					#>
+				}
+			}
+		}
+<#
+		# Initial HTML page with JavaScript to load data
+		$html = 
+@"
+<html>
+<head>
+	<title>MariaDB Installer</title>
+</head>
+<body>
+$mariadb_htmlContent
+</body>
+</html>
+"@
+
+		$buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+		$response.ContentType = "text/html"
+
+		# Send response
+		$response.ContentLength64 = $buffer.Length
+#>
+		$output = $response.OutputStream
+		$output.Write($buffer, 0, $buffer.Length)
+		$output.Close()
+
     }
 
     $listener.Stop()
@@ -8363,15 +8490,26 @@ $mariadb_htmlContent
 # Function to Fetch MariaDB Versions from API
 function Fetch-MariaDBVersions {
     try {
-        $apiUrl = "https://downloads.mariadb.org/rest-api/mariadb-10.6/"
-        $response = Invoke-RestMethod -Uri $apiUrl -Method Get
-        $versions = $response.releases.version
+        $apiUrl = "https://downloads.mariadb.org/rest-api/mariadb/10.6/"
+
+		$headers = @{
+            "Accept" = "application/json"
+            "User-Agent" = "PowerShell"
+        }
+
+		# $response = Invoke-WebRequest -Uri "https://downloads.mariadb.org/rest-api/mariadb/10.6/" -Headers @{ "User-Agent" = "PowerShell" }
+
+		$response = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get
+
+        $versions = $response.releases.PSObject.Properties.Name
+
+        Write-Host "Versions: $($versions -join ', ')"
 
         # Sort and take the latest 10 versions
-        return ($versions | Sort-Object -Descending)[0..9]
+        return $versions
     }
     catch {
-        Write-Host "⚠️ Error fetching MariaDB versions from API"
+        Write-Host "⚠️ Error fetching MariaDB versions from API: $_"
         return @("10.6.21", "10.6.20", "10.6.19", "10.6.18", "10.6.17", "10.6.16", "10.6.15", "10.6.14", "10.6.13", "10.6.12")
     }
 }
@@ -8410,7 +8548,7 @@ function setup_mariadb_explorer-backend ($name, $database, $user, $password) {
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Hidden
 	# Start-Process -FilePath "${MARIADB_BIN_PATH}\${MARIADBD_EXEC_NAME}" -ArgumentList "--no-defaults", "--console --port=$MARIADB_PORT" -WindowStyle Minimized
 	
-	.\PowerShell\PowerShell-7.4.6-win-x64\pwsh.exe -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
+	.\$POWERSHELL_EXEC_PATH -ExecutionPolicy Bypass -File ".\Database\MariaDB\mariadb-10.6.20-winx64\start-mariadb.ps1" "-WindowStyle Minimized"
 
     Start-Sleep -Seconds $SLEEP_SECONDS
 
@@ -8471,17 +8609,14 @@ CREATE TABLE scan_peermonitor (
 
 # Function to define the web server function
 function Start-PowerShellWebServer {
-    param (
-        [int]$Port = 8080
-    )
 
     # Create an HTTP listener
     $listener = New-Object System.Net.HttpListener
-    $listener.Prefixes.Add("http://+:$Port/")
-    $listener.Prefixes.Add("http://+:$Port/start-menu/")  # Ensure trailing /
+    $listener.Prefixes.Add("http://+:$WEB_GUI_PORT/")
+    $listener.Prefixes.Add("http://+:$WEB_GUI_PORT/start-menu/")  # Ensure trailing /
 
     $listener.Start()
-    Write-Host "🚀 Web server started on http://localhost:$Port"
+    Write-Host "🚀 Web server started on http://localhost:$WEB_GUI_PORT"
 
 	# Start browser
 	Start-Process -FilePath ".\$BROWSER_CHROMIUM_EXEC_PATH"  -ArgumentList "--user-data-dir=.\$BROWSER_CHROMIUM_PROFILE_DIR_NAME", "http://localhost:$WEB_GUI_PORT"
@@ -8744,7 +8879,8 @@ if (Test-PortAvailability -Port $WEB_GUI_PORT) {
 		#>
 		# TODO open in portable browser within new tab if browser is open
         # Start-PowerShellWebServer -Port $WEB_GUI_PORT
-		Start-PowerShellWebServer_1 -Port $WEB_GUI_PORT
+		# Start-PowerShellWebServer_1 -Port $WEB_GUI_PORT
+		Start-PowerShellWebServer_1
     } catch {
         Write-Host "❌ Error starting server: $_" -ForegroundColor Red
 		Pause
