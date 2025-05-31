@@ -38,32 +38,43 @@ $SIGNUM_NODE_STARTER_PS1_NAME = "start-node.ps1"
 $SIGNUM_NODE_STARTER_EXEC_NAME = "start-node.bat"
 
 ### Signum Node Mainnet variables ###
-$SIGNUM_NODE_MAINNET_VERSION = "v3.8.4"
+$SIGNUM_NODE_MAINNET_VERSION = "v3.9.0"
+$SIGNUM_NODE_MAINNET_VERSION_NUMBER = [version]($SIGNUM_NODE_MAINNET_VERSION.TrimStart("v"))
 $SIGNUM_NODE_MAINNET_DIR_PATH = "${SIGNUM_MAINNET_DIR_NAME}\${SIGNUM_NODE_DIR_NAME}"
-$SIGNUM_NODE_MAINNET_ZIP_NAME = "signum-node-${SIGNUM_NODE_MAINNET_VERSION}-win_x64.zip"
 $SIGNUM_NODE_MAINNET_UNZIP_NAME = "signum-node-${SIGNUM_NODE_MAINNET_VERSION}-win_x64"
+$SIGNUM_NODE_MAINNET_ZIP_NAME = "${SIGNUM_NODE_MAINNET_UNZIP_NAME}.zip"
+$SIGNUM_NODE_MAINNET_UNZIP_2_NAME = "signum-node-${SIGNUM_NODE_MAINNET_VERSION}"
+$SIGNUM_NODE_MAINNET_ZIP_2_NAME = "${SIGNUM_NODE_MAINNET_UNZIP_2_NAME}.zip"
 $SIGNUM_NODE_MAINNET_UNZIP_PATH = "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_UNZIP_NAME}"
+$SIGNUM_NODE_MAINNET_UNZIP_2_PATH = "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_UNZIP_2_NAME}"
 $SIGNUM_NODE_MAINNET_STARTER_PS1_PATH = "$SIGNUM_NODE_MAINNET_UNZIP_PATH\${SIGNUM_NODE_STARTER_PS1_NAME}"
 $SIGNUM_NODE_MAINNET_STARTER_EXEC_PATH = "$SIGNUM_NODE_MAINNET_UNZIP_PATH\${SIGNUM_NODE_STARTER_EXEC_NAME}"
 $SIGNUM_NODE_MAINNET_DEFAULT_PROPERTIES_PATH = "$SIGNUM_NODE_MAINNET_UNZIP_PATH\conf\node-default.properties"
 $SIGNUM_NODE_MAINNET_PROPERTIES_PATH = "$SIGNUM_NODE_MAINNET_UNZIP_PATH\conf\node.properties"
 $SIGNUM_NODE_MAINNET_URL = "https://github.com/signum-network/signum-node/releases/download/${SIGNUM_NODE_MAINNET_VERSION}/${SIGNUM_NODE_MAINNET_ZIP_NAME}"
+$SIGNUM_NODE_MAINNET_2_URL = "https://github.com/signum-network/signum-node/releases/download/${SIGNUM_NODE_MAINNET_VERSION}/${SIGNUM_NODE_MAINNET_ZIP_2_NAME}"
 $SIGNUM_NODE_MAINNET_P2P_PORT = 8123
 $SIGNUM_NODE_MAINNET_API_PORT = 8125
 $SIGNUM_NODE_MAINNET_API_WEBSOCKET_PORT = 8126
 
 ### Signum Node Testnet variables ###
-$SIGNUM_NODE_TESTNET_VERSION = "v3.8.4"
+$SIGNUM_NODE_TESTNET_VERSION = "v3.9.0"
+$SIGNUM_NODE_TESTNET_VERSION_NUMBER = [version]($SIGNUM_NODE_TESTNET_VERSION.TrimStart("v"))
 $SIGNUM_NODE_TESTNET_DIR_PATH = "${SIGNUM_TESTNET_DIR_NAME}\${SIGNUM_NODE_DIR_NAME}"
-$SIGNUM_NODE_TESTNET_ZIP_NAME = "signum-node-${SIGNUM_NODE_TESTNET_VERSION}-win_x64.zip"
 $SIGNUM_NODE_TESTNET_UNZIP_NAME = "signum-node-${SIGNUM_NODE_TESTNET_VERSION}-win_x64"
+$SIGNUM_NODE_TESTNET_ZIP_NAME = "${SIGNUM_NODE_TESTNET_UNZIP_NAME}.zip"
+$SIGNUM_NODE_TESTNET_UNZIP_2_NAME = "signum-node-${SIGNUM_NODE_TESTNET_VERSION}"
+$SIGNUM_NODE_TESTNET_ZIP_2_NAME = "${SIGNUM_NODE_TESTNET_UNZIP_2_NAME}.zip"
 $SIGNUM_NODE_TESTNET_UNZIP_PATH = "${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_UNZIP_NAME}"
+$SIGNUM_NODE_TESTNET_UNZIP_2_PATH = "${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_UNZIP_2_NAME}"
 $SIGNUM_NODE_TESTNET_STARTER_PS1_PATH = "$SIGNUM_NODE_TESTNET_UNZIP_PATH\${SIGNUM_NODE_STARTER_PS1_NAME}"
 $SIGNUM_NODE_TESTNET_STARTER_EXEC_PATH = "$SIGNUM_NODE_TESTNET_UNZIP_PATH\${SIGNUM_NODE_STARTER_EXEC_NAME}"
 $SIGNUM_NODE_TESTNET_DEFAULT_PROPERTIES_PATH = "$SIGNUM_NODE_TESTNET_UNZIP_PATH\conf\node-default.properties"
 $SIGNUM_NODE_TESTNET_PROPERTIES_PATH = "$SIGNUM_NODE_TESTNET_UNZIP_PATH\conf\node.properties"
 $SIGNUM_NODE_TESTNET_URL = "https://github.com/signum-network/signum-node/releases/download/${SIGNUM_NODE_TESTNET_VERSION}/${SIGNUM_NODE_TESTNET_ZIP_NAME}"
-$SIGNUM_NODE_TESTNET_P2P_PORT = # TODO TBD
+$SIGNUM_NODE_TESTNET_2_URL = "https://github.com/signum-network/signum-node/releases/download/${SIGNUM_NODE_TESTNET_VERSION}/${SIGNUM_NODE_TESTNET_ZIP_2_NAME}"
+# If "$SIGNUM_NODE_TESTNET_P2P_PORT" is setting different than default "P2P.Port = 7123" than default "P2P.BootstrapPeers" should be also modified because default "P2P.BootstrapPeers" only accept connections from "P2P.Port = 7123"
+$SIGNUM_NODE_TESTNET_P2P_PORT = 7123
 $SIGNUM_NODE_TESTNET_API_PORT = 6876
 $SIGNUM_NODE_TESTNET_API_WEBSOCKET_PORT = # TODO TBD
 
@@ -310,14 +321,10 @@ $MARIADBD_EXEC_NAME = "mariadbd.exe"
 $MARIADB_INSTALL_EXEC_NAME = "mysql_install_db.exe"
 $MARIADB_VERSION = "10.6.20"
 $MARIADB_DIR_NAME = "MariaDB"
-# TODO thinking about naming convetion
-# $MARIADB_NAME_DIR = "MariaDB"
 $MARIADB_DIR_PATH = "${DATABASE_DIR}\${MARIADB_DIR_NAME}"
 $MARIADB_DOWNLOADS_DIR_PATH = "$MARIADB_DIR_PATH\$DOWNLOADS_DIR_NAME"
 $MARIADB_UNZIP_NAME = "mariadb-${MARIADB_VERSION}-winx64"
 $MARIADB_ZIP_NAME = "${MARIADB_UNZIP_NAME}.zip"
-# $MARIADB_UNZIP_PATH = "${MARIADB_DIR_PATH}\${MARIADB_UNZIP_NAME}"
-# TODO delete MARIADB_UNZIP_PATH
 $MARIADB_UNZIP_PATH = "${MARIADB_DOWNLOADS_DIR_PATH}\${MARIADB_UNZIP_NAME}"
 $MARIADB_ZIP_PATH = "${MARIADB_DOWNLOADS_DIR_PATH}\${MARIADB_ZIP_NAME}"
 $MARIADB_BIN_PATH = "${MARIADB_DIR_PATH}\bin"
@@ -1289,7 +1296,7 @@ function Install-SignumMainnet {
         # Download the Signum mainnet zip file
         Write-Host "Downloading Signum from GitHub ..."
         # Start-BitsTransfer -Source "${SIGNUM_NODE_MAINNET_URL}" -Destination "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_NAME}"
-		Invoke-WebRequest -Uri ${SIGNUM_NODE_MAINNET_URL} -OutFile ${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_NAME}
+		Invoke-WebRequest -Uri $SIGNUM_NODE_MAINNET_URL -OutFile ${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_NAME}
 
         # Check if download was successful
         if (-not (Test-Path -Path "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_NAME}")) {
@@ -1315,6 +1322,44 @@ function Install-SignumMainnet {
 		Write-Host "Copying ${SIGNUM_NODE_MAINNET_DEFAULT_PROPERTIES_PATH} to ${SIGNUM_NODE_MAINNET_PROPERTIES_PATH} ..."
 		Copy-Item -Path "${SIGNUM_NODE_MAINNET_DEFAULT_PROPERTIES_PATH}" -Destination "${SIGNUM_NODE_MAINNET_PROPERTIES_PATH}"
 	}
+
+	# If signum node version is higher or equal to v3.9.0 download $SIGNUM_NODE_MAINNET_ZIP_2_NAME as well
+	if ($SIGNUM_NODE_MAINNET_VERSION_NUMBER -ge [version]"3.9.0") {
+
+		if (Test-Path -Path "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_2_NAME}") {
+			Write-Host "${SIGNUM_NODE_MAINNET_ZIP_2_NAME} already downloaded."
+		} else {
+			# Download the Signum mainnet zip file
+			Write-Host "Downloading Signum from GitHub ..."
+			# Start-BitsTransfer -Source "${SIGNUM_NODE_MAINNET_URL}" -Destination "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_NAME}"
+			Invoke-WebRequest -Uri "${SIGNUM_NODE_MAINNET_2_URL}" -OutFile ${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_2_NAME}
+	
+			# Check if download was successful
+			if (-not (Test-Path -Path "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_2_NAME}")) {
+				Write-Host "Error: Failed to download Signum."
+				Pause
+				# Install-Menu
+				return
+			}
+		}
+
+		if (Test-Path -Path "$SIGNUM_NODE_MAINNET_UNZIP_2_PATH") {
+			Write-Host "${SIGNUM_NODE_MAINNET_UNZIP_2_NAME} already installed."
+		} else {
+			# Unzip the downloaded file to the installation directory
+			Write-Host "Unzipping Signum to $SIGNUM_NODE_MAINNET_UNZIP_2_PATH ..."
+			Expand-Archive -Path "${SIGNUM_NODE_MAINNET_DIR_PATH}\${SIGNUM_NODE_MAINNET_ZIP_2_NAME}" -DestinationPath "$SIGNUM_NODE_MAINNET_UNZIP_2_PATH" -Force
+		}
+
+		if (Test-Path -Path "${SIGNUM_NODE_MAINNET_UNZIP_PATH}\signum-node.jar") {
+			Write-Host "${SIGNUM_NODE_MAINNET_UNZIP_PATH}\signum-node.jar already exists."
+		} else {
+			# Copy jar file
+			Write-Host "Copying ${SIGNUM_NODE_MAINNET_UNZIP_2_PATH}\signum-node.jar to ${SIGNUM_NODE_MAINNET_UNZIP_PATH} ..."
+			Copy-Item -Path "${SIGNUM_NODE_MAINNET_UNZIP_2_PATH}\signum-node.jar" -Destination "${SIGNUM_NODE_MAINNET_UNZIP_PATH}"
+		}
+	
+	}	
 	
 <# #this true by default	
 	# Add node.indirectIncomingService.enable = true propertie
@@ -1586,10 +1631,46 @@ function Install-SignumTestnet {
 		Copy-Item -Path "${SIGNUM_NODE_TESTNET_DEFAULT_PROPERTIES_PATH}" -Destination "${SIGNUM_NODE_TESTNET_PROPERTIES_PATH}"
 	}
 
-
     # Update node.properties with new database information
     Write-Host "Updating ${SIGNUM_NODE_TESTNET_PROPERTIES_PATH} with Testnet configurations ..."
     (Get-Content -Path $SIGNUM_NODE_TESTNET_PROPERTIES_PATH) -replace '# node.network = signum.net.TestnetNetwork', 'node.network = signum.net.TestnetNetwork' | Set-Content -Path $SIGNUM_NODE_TESTNET_PROPERTIES_PATH
+	
+	# If signum node version is higher or equal to v3.9.0 download $SIGNUM_NODE_TESTNET_ZIP_2_NAME as well
+	if ($SIGNUM_NODE_TESTNET_VERSION_NUMBER -ge [version]"3.9.0") {
+
+		if (Test-Path -Path "${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_ZIP_2_NAME}") {
+			Write-Host "${SIGNUM_NODE_TESTNET_ZIP_2_NAME} already downloaded."
+		} else {
+			# Download the Signum testnet zip file
+			Write-Host "Downloading Signum from GitHub ..."
+			Invoke-WebRequest -Uri "${SIGNUM_NODE_TESTNET_2_URL}" -OutFile ${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_ZIP_2_NAME}
+	
+			# Check if download was successful
+			if (-not (Test-Path -Path "${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_ZIP_2_NAME}")) {
+				Write-Host "Error: Failed to download Signum."
+				Pause
+				# Install-Menu
+				return
+			}
+		}
+
+		if (Test-Path -Path "$SIGNUM_NODE_TESTNET_UNZIP_2_PATH") {
+			Write-Host "${SIGNUM_NODE_TESTNET_UNZIP_2_NAME} already installed."
+		} else {
+			# Unzip the downloaded file to the installation directory
+			Write-Host "Unzipping Signum to $SIGNUM_NODE_TESTNET_UNZIP_2_PATH ..."
+			Expand-Archive -Path "${SIGNUM_NODE_TESTNET_DIR_PATH}\${SIGNUM_NODE_TESTNET_ZIP_2_NAME}" -DestinationPath "$SIGNUM_NODE_TESTNET_UNZIP_2_PATH" -Force
+		}
+
+		if (Test-Path -Path "${SIGNUM_NODE_TESTNET_UNZIP_PATH}\signum-node.jar") {
+			Write-Host "${SIGNUM_NODE_TESTNET_UNZIP_PATH}\signum-node.jar already exists."
+		} else {
+			# Copy jar file
+			Write-Host "Copying ${SIGNUM_NODE_TESTNET_UNZIP_2_PATH}\signum-node.jar to ${SIGNUM_NODE_TESTNET_UNZIP_PATH} ..."
+			Copy-Item -Path "${SIGNUM_NODE_TESTNET_UNZIP_2_PATH}\signum-node.jar" -Destination "${SIGNUM_NODE_TESTNET_UNZIP_PATH}"
+		}
+	
+	}
 	
 <# #this true by default
 	# Add node.indirectIncomingService.enable = true propertie
@@ -8226,6 +8307,9 @@ function install_mariadb-backend {
     }
 
 	# TODO create version json
+	# TODO review and update consol output
+	# TODO show consol output on WEB GUI
+	# TODO make GUI better look and more clear
 
 	# Create data dir if not exists
     if (-not (Test-Path "$MARIADB_DATA_PATH")) {
