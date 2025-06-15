@@ -327,6 +327,10 @@ $MARIADB_URL = "https://archive.mariadb.org/mariadb-${MARIADB_VERSION}/winx64-pa
 $MARIADB_PORT = 3306
 $MARIADB_ROOT_USER = "root"
 $MARIADB_ROOT_PASSWORD = ""
+$MARIADB_DATADIR = "./data"
+$MARIADB_INNODB_BUFFER_POOL_SIZE = "6G"
+$MARIADB_INNODB_LOG_BUFFER_SIZE = "128M"
+$MARIADB_CHARACTER_SET_SERVER = "UTF8"
 
 function updateMariadbVariables {
 	param (
@@ -8374,7 +8378,7 @@ Start-Process -FilePath "..\..\${POWERSHELL_EXEC_PATH}" ``
 			exit
         } else {
 			# Start MariaDB
-			.\bin\mariadbd.exe --no-defaults --console --port=$MARIADB_PORT
+			.\bin\mariadbd.exe  --datadir=$MARIADB_DATADIR --port=$MARIADB_PORT --innodb-buffer-pool-size=$MARIADB_INNODB_BUFFER_POOL_SIZE --innodb-log-buffer-size=$MARIADB_INNODB_LOG_BUFFER_SIZE --character-set-server=$MARIADB_CHARACTER_SET_SERVER --console
 		}
     } catch {
         Write-Host 'An error occurred while starting MariaDB: ```$_'
